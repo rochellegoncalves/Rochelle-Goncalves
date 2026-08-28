@@ -120,6 +120,8 @@ a { color: inherit; text-decoration: none; }
   gap: 12px;
   flex-shrink: 0;
 }
+.logo-mark { height: 40px; width: auto; display: block; }
+.logo-lockup.small .logo-mark { height: 32px; }
 .logo-text { display: flex; flex-direction: column; line-height: 1.25; }
 .logo-text strong {
   font-family: var(--font-serif);
@@ -134,8 +136,6 @@ a { color: inherit; text-decoration: none; }
   color: var(--dourado);
   text-transform: uppercase;
 }
-.logo-lockup.small .logo-text strong { color: var(--verde-profundo); }
-.logo-lockup.small .logo-text em { color: var(--verde-oliva); }
 
 .main-nav {
   display: flex;
