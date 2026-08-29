@@ -41,6 +41,7 @@ export default function ClientesPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
+  const [viewingId, setViewingId] = useState(null);
 
   async function loadClients() {
     const res = await fetch('/api/admin/clients');
@@ -71,6 +72,7 @@ export default function ClientesPage() {
   }, [router]);
 
   function startEdit(client) {
+    setViewingId(null);
     setEditingId(client.id);
     setForm({
       companyName: client.companyName || '',
@@ -148,6 +150,8 @@ export default function ClientesPage() {
   }
 
   if (loading) return <div style={styles.loading}>Carregando...</div>;
+
+  const viewingClient = clients.find((c) => c.id === viewingId) || null;
 
   return (
     <div style={styles.page}>
@@ -317,19 +321,56 @@ export default function ClientesPage() {
           </form>
         </div>
 
+        {viewingClient && (
+          <div style={styles.panel}>
+            <div style={styles.viewHeader}>
+              <h3 style={styles.panelTitle}>{viewingClient.companyName}</h3>
+              <div style={styles.formActions}>
+                <button style={styles.button} onClick={() => startEdit(viewingClient)}>
+                  Editar
+                </button>
+                <button style={styles.cancelButton} onClick={() => setViewingId(null)}>
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+            <h4 style={styles.sectionTitle}>Dados da empresa (CONTRATANTE)</h4>
+            <div style={styles.viewGrid}>
+              <ViewField label="CNPJ/CPF" value={viewingClient.cpfCnpj} />
+              <ViewField label="Endereço" value={viewingClient.address} />
+              <ViewField label="Telefone" value={viewingClient.phone} />
+              <ViewField label="E-mail de login" value={viewingClient.email} />
+              <ViewField label="Valor mensal" value={formatMoney(viewingClient.monthlyValue)} />
+              <ViewField label="Início do contrato" value={formatDate(viewingClient.contractStartDate)} />
+              <ViewField label="Documentos" value={String(viewingClient.documentCount)} />
+              <ViewField label="Status" value={viewingClient.active ? 'Ativo' : 'Inativo'} />
+            </div>
+
+            <h4 style={styles.sectionTitle}>Dados do administrador</h4>
+            <div style={styles.viewGrid}>
+              <ViewField label="Nome" value={viewingClient.adminName} />
+              <ViewField label="CPF" value={viewingClient.adminCpf} />
+              <ViewField label="RG" value={viewingClient.adminRg} />
+              <ViewField label="E-mail" value={viewingClient.adminEmail} />
+              <ViewField label="Nacionalidade" value={viewingClient.adminNationality} />
+              <ViewField label="Estado civil" value={viewingClient.adminMaritalStatus} />
+              <ViewField label="Profissão" value={viewingClient.adminProfession} />
+            </div>
+          </div>
+        )}
+
         <div style={styles.tableWrap}>
           <div style={styles.tableHeadRow}>
             <span>Empresa</span>
             <span>Valor mensal</span>
-            <span>Início</span>
-            <span>Documentos</span>
             <span>Status</span>
             <span></span>
           </div>
           {clients.length === 0 && <p style={styles.emptyState}>Nenhum cliente cadastrado ainda.</p>}
           {clients.map((c) => (
             <div key={c.id} style={styles.tableRow}>
-              <span>
+              <span style={styles.clickableCell} onClick={() => setViewingId(c.id)}>
                 <span style={styles.clientName}>{c.companyName}</span>
                 <br />
                 <span style={styles.clientSubline}>
@@ -338,8 +379,6 @@ export default function ClientesPage() {
                 </span>
               </span>
               <span>{formatMoney(c.monthlyValue)}</span>
-              <span>{formatDate(c.contractStartDate)}</span>
-              <span>{c.documentCount}</span>
               <button
                 style={c.active ? styles.statusActive : styles.statusInactive}
                 onClick={() => handleToggleActive(c)}
@@ -359,6 +398,15 @@ export default function ClientesPage() {
           ))}
         </div>
       </main>
+    </div>
+  );
+}
+
+function ViewField({ label, value }) {
+  return (
+    <div style={styles.viewField}>
+      <span style={styles.viewLabel}>{label}</span>
+      <span style={styles.viewValue}>{value || '—'}</span>
     </div>
   );
 }
@@ -423,7 +471,7 @@ const styles = {
   tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
   tableHeadRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr auto',
     padding: '12px 20px',
     fontSize: '0.72rem',
     textTransform: 'uppercase',
@@ -434,15 +482,26 @@ const styles = {
   },
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr auto',
     padding: '14px 20px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
     fontSize: '0.88rem',
     alignItems: 'center',
+    gap: 12,
   },
+  clickableCell: { cursor: 'pointer' },
   clientName: { fontWeight: 600 },
   clientSubline: { fontSize: '0.76rem', color: '#3C4A38', opacity: 0.75 },
   emptyState: { padding: 20, color: '#3C4A38', margin: 0 },
+  viewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  viewGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: 16,
+  },
+  viewField: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 },
+  viewLabel: { fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: '#3C4A38', opacity: 0.7 },
+  viewValue: { fontSize: '0.9rem', color: '#0F2D24' },
   rowActions: { display: 'flex', gap: 8, justifySelf: 'end' },
   editButton: {
     background: 'none',
