@@ -14,6 +14,15 @@ create policy "Cliente vê apenas o próprio registro"
   on public.clients for select
   using (auth.uid() = id);
 
+-- Dados adicionais do cliente, usados para preencher o contrato
+-- automaticamente no futuro (nome/razão social já está em company_name).
+alter table public.clients
+  add column if not exists cpf_cnpj text,
+  add column if not exists address text,
+  add column if not exists phone text,
+  add column if not exists monthly_value numeric,
+  add column if not exists contract_start_date date;
+
 -- Tabela de documentos
 create table if not exists public.documents (
   id uuid primary key default gen_random_uuid(),

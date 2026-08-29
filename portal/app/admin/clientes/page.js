@@ -5,13 +5,35 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '../../../lib/supabaseClient';
 import AdminSidebar from '../../../components/AdminSidebar';
 
+const EMPTY_FORM = {
+  companyName: '',
+  email: '',
+  cpfCnpj: '',
+  address: '',
+  phone: '',
+  monthlyValue: '',
+  contractStartDate: '',
+};
+
+function formatMoney(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  return Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 export default function ClientesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ companyName: '', email: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [editingId, setEditingId] = useState(null);
 
   async function loadClients() {
     const res = await fetch('/api/admin/clients');
@@ -41,14 +63,34 @@ export default function ClientesPage() {
     init();
   }, [router]);
 
+  function startEdit(client) {
+    setEditingId(client.id);
+    setForm({
+      companyName: client.companyName || '',
+      email: '',
+      cpfCnpj: client.cpfCnpj || '',
+      address: client.address || '',
+      phone: client.phone || '',
+      monthlyValue: client.monthlyValue ?? '',
+      contractStartDate: client.contractStartDate || '',
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setError('');
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
     setError('');
+
     const res = await fetch('/api/admin/clients', {
-      method: 'POST',
+      method: editingId ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify(editingId ? { ...form, id: editingId } : form),
     });
     setSaving(false);
     if (!res.ok) {
@@ -56,7 +98,8 @@ export default function ClientesPage() {
       setError(`Erro (${res.status}): ${JSON.stringify(body)}`);
       return;
     }
-    setForm({ companyName: '', email: '' });
+    setEditingId(null);
+    setForm(EMPTY_FORM);
     await loadClients();
   }
 
@@ -73,10 +116,10 @@ export default function ClientesPage() {
         {error && <p style={styles.error}>{error}</p>}
 
         <div style={styles.panel}>
-          <h3 style={styles.panelTitle}>Novo cliente</h3>
+          <h3 style={styles.panelTitle}>{editingId ? 'Editar cliente' : 'Novo cliente'}</h3>
           <form onSubmit={handleSubmit} style={styles.form}>
             <div style={styles.field}>
-              <label style={styles.label}>Nome da empresa</label>
+              <label style={styles.label}>Nome completo / Razão social</label>
               <input
                 style={styles.input}
                 required
@@ -85,35 +128,97 @@ export default function ClientesPage() {
                 placeholder="Empresa Exemplo Ltda."
               />
             </div>
+            {!editingId && (
+              <div style={styles.field}>
+                <label style={styles.label}>E-mail do cliente</label>
+                <input
+                  style={styles.input}
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="contato@empresaexemplo.com.br"
+                />
+              </div>
+            )}
             <div style={styles.field}>
-              <label style={styles.label}>E-mail do cliente</label>
+              <label style={styles.label}>CPF/CNPJ</label>
               <input
                 style={styles.input}
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="contato@empresaexemplo.com.br"
+                value={form.cpfCnpj}
+                onChange={(e) => setForm({ ...form, cpfCnpj: e.target.value })}
+                placeholder="00.000.000/0000-00"
               />
             </div>
-            <button style={styles.button} type="submit" disabled={saving}>
-              {saving ? 'Salvando...' : 'Adicionar cliente'}
-            </button>
+            <div style={styles.field}>
+              <label style={styles.label}>Telefone</label>
+              <input
+                style={styles.input}
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="(19) 99999-9999"
+              />
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>Endereço</label>
+              <input
+                style={styles.input}
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                placeholder="Rua Exemplo, 123 - Campinas/SP"
+              />
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>Valor mensal (R$)</label>
+              <input
+                style={styles.input}
+                type="number"
+                step="0.01"
+                value={form.monthlyValue}
+                onChange={(e) => setForm({ ...form, monthlyValue: e.target.value })}
+                placeholder="2500"
+              />
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>Início do contrato</label>
+              <input
+                style={styles.input}
+                type="date"
+                value={form.contractStartDate}
+                onChange={(e) => setForm({ ...form, contractStartDate: e.target.value })}
+              />
+            </div>
+            <div style={styles.formActions}>
+              <button style={styles.button} type="submit" disabled={saving}>
+                {saving ? 'Salvando...' : editingId ? 'Salvar edição' : 'Adicionar cliente'}
+              </button>
+              {editingId && (
+                <button type="button" style={styles.cancelButton} onClick={cancelEdit}>
+                  Cancelar
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
         <div style={styles.tableWrap}>
           <div style={styles.tableHeadRow}>
             <span>Empresa</span>
-            <span>Cadastrado em</span>
+            <span>Valor mensal</span>
+            <span>Início</span>
             <span>Documentos</span>
+            <span></span>
           </div>
           {clients.length === 0 && <p style={styles.emptyState}>Nenhum cliente cadastrado ainda.</p>}
           {clients.map((c) => (
             <div key={c.id} style={styles.tableRow}>
               <span style={styles.clientName}>{c.companyName}</span>
-              <span>{new Date(c.createdAt).toLocaleDateString('pt-BR')}</span>
+              <span>{formatMoney(c.monthlyValue)}</span>
+              <span>{formatDate(c.contractStartDate)}</span>
               <span>{c.documentCount}</span>
+              <button style={styles.editButton} onClick={() => startEdit(c)}>
+                Editar
+              </button>
             </div>
           ))}
         </div>
@@ -131,10 +236,24 @@ const styles = {
   error: { color: '#c8493a', marginBottom: 20 },
   panel: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, padding: 24, marginBottom: 32 },
   panelTitle: { fontSize: '1rem', marginBottom: 16, fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
-  form: { display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 16, alignItems: 'end' },
-  field: { display: 'flex', flexDirection: 'column', gap: 6 },
+  form: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: 16,
+    alignItems: 'end',
+  },
+  field: { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 },
   label: { fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#3C4A38' },
-  input: { padding: '10px 12px', border: '1px solid rgba(15,45,36,0.15)', borderRadius: 4, fontSize: '0.9rem' },
+  input: {
+    padding: '10px 12px',
+    border: '1px solid rgba(15,45,36,0.15)',
+    borderRadius: 4,
+    fontSize: '0.9rem',
+    width: '100%',
+    minWidth: 0,
+    boxSizing: 'border-box',
+  },
+  formActions: { display: 'flex', gap: 10 },
   button: {
     background: '#C8A869',
     color: '#0F2D24',
@@ -145,24 +264,47 @@ const styles = {
     fontSize: '0.85rem',
     height: 42,
   },
+  cancelButton: {
+    background: 'none',
+    border: '1px solid rgba(15,45,36,0.2)',
+    color: '#3C4A38',
+    padding: '11px 20px',
+    borderRadius: 4,
+    fontWeight: 600,
+    fontSize: '0.85rem',
+    height: 42,
+  },
   tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
   tableHeadRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
     padding: '12px 20px',
     fontSize: '0.72rem',
     textTransform: 'uppercase',
     color: '#3C4A38',
     fontWeight: 700,
     background: '#E6DCC2',
+    alignItems: 'center',
   },
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
     padding: '14px 20px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
     fontSize: '0.88rem',
+    alignItems: 'center',
   },
   clientName: { fontWeight: 600 },
   emptyState: { padding: 20, color: '#3C4A38', margin: 0 },
+  editButton: {
+    background: 'none',
+    border: '1px solid rgba(15,45,36,0.2)',
+    color: '#0F2D24',
+    padding: '6px 14px',
+    borderRadius: 4,
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    justifySelf: 'end',
+  },
 };
