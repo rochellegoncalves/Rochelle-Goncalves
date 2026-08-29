@@ -21,7 +21,8 @@ alter table public.clients
   add column if not exists address text,
   add column if not exists phone text,
   add column if not exists monthly_value numeric,
-  add column if not exists contract_start_date date;
+  add column if not exists contract_start_date date,
+  add column if not exists admin_name text;
 
 -- Tabela de documentos
 create table if not exists public.documents (

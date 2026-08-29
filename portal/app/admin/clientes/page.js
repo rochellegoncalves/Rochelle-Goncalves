@@ -8,6 +8,7 @@ import AdminSidebar from '../../../components/AdminSidebar';
 const EMPTY_FORM = {
   companyName: '',
   email: '',
+  adminName: '',
   cpfCnpj: '',
   address: '',
   phone: '',
@@ -68,6 +69,7 @@ export default function ClientesPage() {
     setForm({
       companyName: client.companyName || '',
       email: '',
+      adminName: client.adminName || '',
       cpfCnpj: client.cpfCnpj || '',
       address: client.address || '',
       phone: client.phone || '',
@@ -126,6 +128,15 @@ export default function ClientesPage() {
                 value={form.companyName}
                 onChange={(e) => setForm({ ...form, companyName: e.target.value })}
                 placeholder="Empresa Exemplo Ltda."
+              />
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>Nome do administrador</label>
+              <input
+                style={styles.input}
+                value={form.adminName}
+                onChange={(e) => setForm({ ...form, adminName: e.target.value })}
+                placeholder="Quem responde e assina pela empresa"
               />
             </div>
             {!editingId && (
@@ -212,7 +223,14 @@ export default function ClientesPage() {
           {clients.length === 0 && <p style={styles.emptyState}>Nenhum cliente cadastrado ainda.</p>}
           {clients.map((c) => (
             <div key={c.id} style={styles.tableRow}>
-              <span style={styles.clientName}>{c.companyName}</span>
+              <span>
+                <span style={styles.clientName}>{c.companyName}</span>
+                <br />
+                <span style={styles.clientSubline}>
+                  {c.adminName ? `${c.adminName} · ` : ''}
+                  {c.cpfCnpj || 'CPF/CNPJ não cadastrado'}
+                </span>
+              </span>
               <span>{formatMoney(c.monthlyValue)}</span>
               <span>{formatDate(c.contractStartDate)}</span>
               <span>{c.documentCount}</span>
@@ -295,6 +313,7 @@ const styles = {
     alignItems: 'center',
   },
   clientName: { fontWeight: 600 },
+  clientSubline: { fontSize: '0.76rem', color: '#3C4A38', opacity: 0.75 },
   emptyState: { padding: 20, color: '#3C4A38', margin: 0 },
   editButton: {
     background: 'none',

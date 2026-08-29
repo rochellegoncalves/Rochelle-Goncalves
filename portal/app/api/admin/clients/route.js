@@ -10,7 +10,7 @@ export async function GET() {
   const { data, error: dbError } = await admin
     .from('clients')
     .select(
-      'id, company_name, cpf_cnpj, address, phone, monthly_value, contract_start_date, created_at, documents(count)'
+      'id, company_name, admin_name, cpf_cnpj, address, phone, monthly_value, contract_start_date, created_at, documents(count)'
     )
     .order('created_at', { ascending: false });
 
@@ -21,6 +21,7 @@ export async function GET() {
   const clients = data.map((c) => ({
     id: c.id,
     companyName: c.company_name,
+    adminName: c.admin_name,
     cpfCnpj: c.cpf_cnpj,
     address: c.address,
     phone: c.phone,
@@ -37,7 +38,7 @@ export async function POST(request) {
   const { error } = await requireOwner();
   if (error) return error;
 
-  const { companyName, email, cpfCnpj, address, phone, monthlyValue, contractStartDate } =
+  const { companyName, email, adminName, cpfCnpj, address, phone, monthlyValue, contractStartDate } =
     await request.json();
   if (!companyName || !email) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
@@ -57,6 +58,7 @@ export async function POST(request) {
   const { error: insertError } = await admin.from('clients').insert({
     id: userData.user.id,
     company_name: companyName,
+    admin_name: adminName || null,
     cpf_cnpj: cpfCnpj || null,
     address: address || null,
     phone: phone || null,
@@ -75,7 +77,7 @@ export async function PATCH(request) {
   const { error } = await requireOwner();
   if (error) return error;
 
-  const { id, companyName, cpfCnpj, address, phone, monthlyValue, contractStartDate } =
+  const { id, companyName, adminName, cpfCnpj, address, phone, monthlyValue, contractStartDate } =
     await request.json();
   if (!id || !companyName) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
@@ -86,6 +88,7 @@ export async function PATCH(request) {
     .from('clients')
     .update({
       company_name: companyName,
+      admin_name: adminName || null,
       cpf_cnpj: cpfCnpj || null,
       address: address || null,
       phone: phone || null,
