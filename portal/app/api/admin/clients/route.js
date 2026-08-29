@@ -3,12 +3,13 @@ import { requireOwner } from '../../../../lib/requireOwner';
 import { createAdminClient } from '../../../../lib/supabaseAdmin';
 
 const SELECT_FIELDS =
-  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, admin_nationality, admin_marital_status, admin_profession, monthly_value, contract_start_date, created_at, documents(count)';
+  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, admin_nationality, admin_marital_status, admin_profession, monthly_value, contract_start_date, active, created_at, documents(count)';
 
-function mapClient(c) {
+function mapClient(c, email) {
   return {
     id: c.id,
     companyName: c.company_name,
+    email: email || '',
     cpfCnpj: c.cpf_cnpj,
     address: c.address,
     phone: c.phone,
@@ -21,6 +22,7 @@ function mapClient(c) {
     adminProfession: c.admin_profession,
     monthlyValue: c.monthly_value,
     contractStartDate: c.contract_start_date,
+    active: c.active,
     createdAt: c.created_at,
     documentCount: c.documents?.[0]?.count ?? 0,
   };
@@ -58,7 +60,14 @@ export async function GET() {
     return NextResponse.json({ error: dbError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ clients: data.map(mapClient) });
+  const emails = await Promise.all(
+    data.map(async (c) => {
+      const { data: userData } = await admin.auth.admin.getUserById(c.id);
+      return userData?.user?.email || '';
+    })
+  );
+
+  return NextResponse.json({ clients: data.map((c, i) => mapClient(c, emails[i])) });
 }
 
 export async function POST(request) {
@@ -97,11 +106,28 @@ export async function PATCH(request) {
   if (error) return error;
 
   const body = await request.json();
-  if (!body.id || !body.companyName) {
+  if (!body.id) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
   const admin = createAdminClient();
+
+  // Toggle rápido de ativo/inativo (não mexe nos outros campos)
+  if (typeof body.active === 'boolean' && !body.companyName) {
+    const { error: toggleError } = await admin
+      .from('clients')
+      .update({ active: body.active })
+      .eq('id', body.id);
+    if (toggleError) {
+      return NextResponse.json({ error: toggleError.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (!body.companyName) {
+    return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
+  }
+
   const { error: updateError } = await admin
     .from('clients')
     .update(fieldsFromBody(body))
@@ -109,6 +135,42 @@ export async function PATCH(request) {
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  if (body.email) {
+    const { error: emailError } = await admin.auth.admin.updateUserById(body.id, {
+      email: body.email,
+      email_confirm: true,
+    });
+    if (emailError) {
+      return NextResponse.json({ error: emailError.message }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(request) {
+  const { error } = await requireOwner();
+  if (error) return error;
+
+  const id = new URL(request.url).searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ error: 'missing_id' }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+
+  const { data: docs } = await admin.from('documents').select('file_path').eq('client_id', id);
+  if (docs?.length) {
+    await admin.storage.from('documents').remove(docs.map((d) => d.file_path));
+  }
+
+  // Apagar o usuário do Auth já apaga em cascata as linhas em clients e
+  // documents (FK "on delete cascade" no schema).
+  const { error: deleteError } = await admin.auth.admin.deleteUser(id);
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

@@ -74,7 +74,7 @@ export default function ClientesPage() {
     setEditingId(client.id);
     setForm({
       companyName: client.companyName || '',
-      email: '',
+      email: client.email || '',
       cpfCnpj: client.cpfCnpj || '',
       address: client.address || '',
       phone: client.phone || '',
@@ -117,6 +117,36 @@ export default function ClientesPage() {
     await loadClients();
   }
 
+  async function handleToggleActive(client) {
+    const res = await fetch('/api/admin/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: client.id, active: !client.active }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(`Erro (${res.status}): ${JSON.stringify(body)}`);
+      return;
+    }
+    await loadClients();
+  }
+
+  async function handleDelete(client) {
+    if (
+      !window.confirm(
+        `Excluir "${client.companyName}"? Isso apaga o cadastro, o acesso à área do cliente e os documentos dele. Não pode ser desfeito.`
+      )
+    )
+      return;
+    const res = await fetch(`/api/admin/clients?id=${client.id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(`Erro ao excluir (${res.status}): ${JSON.stringify(body)}`);
+      return;
+    }
+    await loadClients();
+  }
+
   if (loading) return <div style={styles.loading}>Carregando...</div>;
 
   return (
@@ -144,19 +174,17 @@ export default function ClientesPage() {
                   placeholder="Empresa Exemplo Ltda."
                 />
               </div>
-              {!editingId && (
-                <div style={styles.field}>
-                  <label style={styles.label}>E-mail de login (área do cliente)</label>
-                  <input
-                    style={styles.input}
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="contato@empresaexemplo.com.br"
-                  />
-                </div>
-              )}
+              <div style={styles.field}>
+                <label style={styles.label}>E-mail de login (área do cliente)</label>
+                <input
+                  style={styles.input}
+                  type="email"
+                  required={!editingId}
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="contato@empresaexemplo.com.br"
+                />
+              </div>
               <div style={styles.field}>
                 <label style={styles.label}>CNPJ (ou CPF, se pessoa física)</label>
                 <input
@@ -295,6 +323,7 @@ export default function ClientesPage() {
             <span>Valor mensal</span>
             <span>Início</span>
             <span>Documentos</span>
+            <span>Status</span>
             <span></span>
           </div>
           {clients.length === 0 && <p style={styles.emptyState}>Nenhum cliente cadastrado ainda.</p>}
@@ -311,9 +340,21 @@ export default function ClientesPage() {
               <span>{formatMoney(c.monthlyValue)}</span>
               <span>{formatDate(c.contractStartDate)}</span>
               <span>{c.documentCount}</span>
-              <button style={styles.editButton} onClick={() => startEdit(c)}>
-                Editar
+              <button
+                style={c.active ? styles.statusActive : styles.statusInactive}
+                onClick={() => handleToggleActive(c)}
+                title="Clique para alternar"
+              >
+                {c.active ? 'Ativo' : 'Inativo'}
               </button>
+              <div style={styles.rowActions}>
+                <button style={styles.editButton} onClick={() => startEdit(c)}>
+                  Editar
+                </button>
+                <button style={styles.deleteButton} onClick={() => handleDelete(c)}>
+                  Excluir
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -382,7 +423,7 @@ const styles = {
   tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
   tableHeadRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
     padding: '12px 20px',
     fontSize: '0.72rem',
     textTransform: 'uppercase',
@@ -393,7 +434,7 @@ const styles = {
   },
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto',
     padding: '14px 20px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
     fontSize: '0.88rem',
@@ -402,6 +443,7 @@ const styles = {
   clientName: { fontWeight: 600 },
   clientSubline: { fontSize: '0.76rem', color: '#3C4A38', opacity: 0.75 },
   emptyState: { padding: 20, color: '#3C4A38', margin: 0 },
+  rowActions: { display: 'flex', gap: 8, justifySelf: 'end' },
   editButton: {
     background: 'none',
     border: '1px solid rgba(15,45,36,0.2)',
@@ -411,6 +453,37 @@ const styles = {
     fontSize: '0.78rem',
     fontWeight: 600,
     cursor: 'pointer',
-    justifySelf: 'end',
+  },
+  deleteButton: {
+    background: 'none',
+    border: '1px solid rgba(217,88,74,0.4)',
+    color: '#d9584a',
+    padding: '6px 14px',
+    borderRadius: 4,
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  statusActive: {
+    background: 'rgba(139,165,143,0.18)',
+    border: '1px solid rgba(139,165,143,0.5)',
+    color: '#4c6350',
+    padding: '5px 12px',
+    borderRadius: 30,
+    fontSize: '0.74rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+    justifySelf: 'start',
+  },
+  statusInactive: {
+    background: 'rgba(15,45,36,0.06)',
+    border: '1px solid rgba(15,45,36,0.15)',
+    color: '#3C4A38',
+    padding: '5px 12px',
+    borderRadius: 30,
+    fontSize: '0.74rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+    justifySelf: 'start',
   },
 };
