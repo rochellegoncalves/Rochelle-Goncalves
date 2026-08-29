@@ -25,36 +25,23 @@ export async function GET(request) {
   return NextResponse.json({ documents: data });
 }
 
+// Records a document that was already uploaded straight to Supabase Storage
+// from the browser (via a signed upload URL from /api/admin/documents/sign).
+// Keeping the actual file bytes out of this route avoids Vercel's ~4.5MB
+// serverless request body limit.
 export async function POST(request) {
   const { error } = await requireOwner();
   if (error) return error;
 
-  const formData = await request.formData();
-  const file = formData.get('file');
-  const clientId = formData.get('clientId');
-  const name = formData.get('name');
-  const category = formData.get('category') || '';
-
-  if (!file || !clientId || !name) {
+  const { clientId, name, category, filePath } = await request.json();
+  if (!clientId || !name || !filePath) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
   const admin = createAdminClient();
-
-  const safeFileName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const filePath = `${clientId}/${Date.now()}-${safeFileName}`;
-
-  const { error: uploadError } = await admin.storage
-    .from('documents')
-    .upload(filePath, file, { contentType: file.type || 'application/octet-stream' });
-
-  if (uploadError) {
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
-  }
-
   const { error: insertError } = await admin
     .from('documents')
-    .insert({ client_id: clientId, name, category, file_path: filePath });
+    .insert({ client_id: clientId, name, category: category || '', file_path: filePath });
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });

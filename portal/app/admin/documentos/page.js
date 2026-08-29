@@ -59,21 +59,52 @@ export default function DocumentosPage() {
     setUploading(true);
     setError('');
 
-    const body = new FormData();
-    body.append('clientId', selectedClientId);
-    body.append('name', form.name);
-    body.append('category', form.category);
-    body.append('file', form.file);
+    try {
+      const signRes = await fetch('/api/admin/documents/sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: selectedClientId, fileName: form.file.name }),
+      });
+      if (!signRes.ok) {
+        const errBody = await signRes.json().catch(() => ({}));
+        setError(`Erro ao preparar envio (${signRes.status}): ${JSON.stringify(errBody)}`);
+        setUploading(false);
+        return;
+      }
+      const { filePath, token } = await signRes.json();
 
-    const res = await fetch('/api/admin/documents', { method: 'POST', body });
-    setUploading(false);
-    if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      setError(`Erro (${res.status}): ${JSON.stringify(errBody)}`);
-      return;
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .uploadToSignedUrl(filePath, token, form.file);
+      if (uploadError) {
+        setError(`Erro ao subir arquivo: ${uploadError.message}`);
+        setUploading(false);
+        return;
+      }
+
+      const recordRes = await fetch('/api/admin/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: selectedClientId,
+          name: form.name,
+          category: form.category,
+          filePath,
+        }),
+      });
+      if (!recordRes.ok) {
+        const errBody = await recordRes.json().catch(() => ({}));
+        setError(`Erro ao registrar documento (${recordRes.status}): ${JSON.stringify(errBody)}`);
+        setUploading(false);
+        return;
+      }
+
+      setForm({ name: '', category: '', file: null });
+      await loadDocuments(selectedClientId);
+    } finally {
+      setUploading(false);
     }
-    setForm({ name: '', category: '', file: null });
-    await loadDocuments(selectedClientId);
   }
 
   if (loading) return <div style={styles.loading}>Carregando...</div>;
