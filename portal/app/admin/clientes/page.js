@@ -42,6 +42,8 @@ export default function ClientesPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [viewingId, setViewingId] = useState(null);
+  const [sendingSignature, setSendingSignature] = useState(false);
+  const [signatureResult, setSignatureResult] = useState(null);
 
   async function loadClients() {
     const res = await fetch('/api/admin/clients');
@@ -131,6 +133,31 @@ export default function ClientesPage() {
       return;
     }
     await loadClients();
+  }
+
+  async function handleSendForSignature(client) {
+    const signerEmail = client.adminEmail || client.email;
+    if (
+      !window.confirm(
+        `Enviar o contrato de "${client.companyName}" pro Autentique agora? Isso manda de verdade um e-mail de assinatura para ${signerEmail}.`
+      )
+    )
+      return;
+    setSendingSignature(true);
+    setSignatureResult(null);
+    setError('');
+    const res = await fetch('/api/admin/contract/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: client.id }),
+    });
+    const body = await res.json().catch(() => ({}));
+    setSendingSignature(false);
+    if (!res.ok) {
+      setError(`Erro ao enviar pro Autentique (${res.status}): ${JSON.stringify(body)}`);
+      return;
+    }
+    setSignatureResult(body);
   }
 
   async function handleDelete(client) {
@@ -334,14 +361,35 @@ export default function ClientesPage() {
                 >
                   Gerar contrato (PDF)
                 </a>
+                <button
+                  type="button"
+                  style={styles.cancelButton}
+                  disabled={sendingSignature}
+                  onClick={() => handleSendForSignature(viewingClient)}
+                >
+                  {sendingSignature ? 'Enviando...' : 'Enviar p/ assinatura (Autentique)'}
+                </button>
                 <button style={styles.cancelButton} onClick={() => startEdit(viewingClient)}>
                   Editar
                 </button>
-                <button style={styles.cancelButton} onClick={() => setViewingId(null)}>
+                <button
+                  style={styles.cancelButton}
+                  onClick={() => {
+                    setViewingId(null);
+                    setSignatureResult(null);
+                  }}
+                >
                   Fechar
                 </button>
               </div>
             </div>
+
+            {signatureResult && (
+              <p style={styles.signatureNote}>
+                Enviado para assinatura de <strong>{signatureResult.signerName}</strong> (
+                {signatureResult.signerEmail}). O Autentique já mandou o e-mail de assinatura pra ela(e).
+              </p>
+            )}
 
             <h4 style={styles.sectionTitle}>Dados da empresa (CONTRATANTE)</h4>
             <div style={styles.viewGrid}>
@@ -378,7 +426,13 @@ export default function ClientesPage() {
           {clients.length === 0 && <p style={styles.emptyState}>Nenhum cliente cadastrado ainda.</p>}
           {clients.map((c) => (
             <div key={c.id} style={styles.tableRow}>
-              <span style={styles.clickableCell} onClick={() => setViewingId(c.id)}>
+              <span
+                style={styles.clickableCell}
+                onClick={() => {
+                  setViewingId(c.id);
+                  setSignatureResult(null);
+                }}
+              >
                 <span style={styles.clientName}>{c.companyName}</span>
                 <br />
                 <span style={styles.clientSubline}>
@@ -455,7 +509,7 @@ const styles = {
     minWidth: 0,
     boxSizing: 'border-box',
   },
-  formActions: { display: 'flex', gap: 10 },
+  formActions: { display: 'flex', gap: 10, flexWrap: 'wrap' },
   button: {
     background: '#C8A869',
     color: '#0F2D24',
@@ -501,7 +555,23 @@ const styles = {
   clientName: { fontWeight: 600 },
   clientSubline: { fontSize: '0.76rem', color: '#3C4A38', opacity: 0.75 },
   emptyState: { padding: 20, color: '#3C4A38', margin: 0 },
-  viewHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  viewHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 4,
+  },
+  signatureNote: {
+    background: 'rgba(139,165,143,0.15)',
+    border: '1px solid rgba(139,165,143,0.4)',
+    borderRadius: 4,
+    padding: '10px 14px',
+    fontSize: '0.85rem',
+    color: '#3C4A38',
+    marginTop: 8,
+  },
   viewGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
