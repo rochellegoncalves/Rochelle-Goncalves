@@ -326,7 +326,15 @@ export default function ClientesPage() {
             <div style={styles.viewHeader}>
               <h3 style={styles.panelTitle}>{viewingClient.companyName}</h3>
               <div style={styles.formActions}>
-                <button style={styles.button} onClick={() => startEdit(viewingClient)}>
+                <a
+                  style={styles.button}
+                  href={`/api/admin/contract?clientId=${viewingClient.id}`}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Gerar contrato (PDF)
+                </a>
+                <button style={styles.cancelButton} onClick={() => startEdit(viewingClient)}>
                   Editar
                 </button>
                 <button style={styles.cancelButton} onClick={() => setViewingId(null)}>

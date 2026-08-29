@@ -56,18 +56,20 @@ dentro do Painel do Negócio, e pode reaproveitar/conversar com a tabela
 `clients` que já existe.
 
 ### 6. Contrato preenchido automaticamente + assinatura eletrônica
-Ela mandou o modelo real do contrato de consultoria (as partes variáveis
-são: nome/razão social, CPF/CNPJ, endereço, e-mail, telefone, valor mensal
-e data de início -- todos já viraram campos editáveis no cadastro do
-cliente, em `/admin/clientes`). Os próximos passos pra fechar o ciclo:
-1. Gerar o PDF do contrato já preenchido com os dados do cliente
-   (ex.: template com marcadores tipo `{{cpfCnpj}}` que a gente substitui).
-2. Mandar esse PDF pra assinatura eletrônica -- precisa escolher um provedor
-   (ex.: Autentique, Clicksign, ZapSign ou D4Sign, todos usados no Brasil e
-   com validade jurídica), criar conta lá e integrar a API deles.
-3. Guardar o contrato assinado como mais um documento na área do cliente.
-Ainda não construído -- falta decidir o provedor de assinatura antes de
-integrar.
+Ela mandou o modelo real do contrato de consultoria. Status:
+1. ~~Gerar o PDF do contrato já preenchido com os dados do cliente~~ --
+   **feito**. Botão "Gerar contrato (PDF)" no painel de detalhes de cada
+   cliente (`/admin/clientes`) monta o PDF com as 20 cláusulas do modelo
+   real dela, já preenchido com os dados da empresa e do administrador, e
+   salva automaticamente como documento (categoria "Contrato") na área
+   daquele cliente.
+2. Mandar esse PDF pra assinatura eletrônica -- ainda falta escolher um
+   provedor (ex.: Autentique, Clicksign, ZapSign ou D4Sign, todos usados no
+   Brasil e com validade jurídica), criar conta lá e integrar a API deles.
+3. Guardar o contrato assinado (voltando do provedor de assinatura) como
+   documento na área do cliente -- já dá pra fazer isso hoje manualmente
+   (upload em Documentos), só falta automatizar quando tiver o provedor
+   escolhido.
 
 ### 7. Botão "ver como o cliente vê" no cadastro do cliente
 Depois que a Área do Cliente tiver mais conteúdo de verdade (Plano de Ação,
