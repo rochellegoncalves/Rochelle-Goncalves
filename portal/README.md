@@ -25,3 +25,7 @@ npm run dev
 ## Adicionando um cliente (por enquanto, manual — vem um painel depois)
 
 Veja o passo a passo comentado no final de `supabase/schema.sql`.
+
+## Deploy
+
+Publicado via Vercel, com Root Directory apontando para esta pasta (`portal`).
