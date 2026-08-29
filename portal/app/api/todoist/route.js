@@ -33,7 +33,16 @@ export async function GET() {
 
   const projectsRes = await fetch('https://api.todoist.com/rest/v2/projects', { headers });
   if (!projectsRes.ok) {
-    return NextResponse.json({ error: 'todoist_api_error' }, { status: 502 });
+    const bodyText = await projectsRes.text().catch(() => '');
+    return NextResponse.json(
+      {
+        error: 'todoist_api_error',
+        status: projectsRes.status,
+        body: bodyText.slice(0, 300),
+        tokenLength: token.length,
+      },
+      { status: 502 }
+    );
   }
   const projects = await projectsRes.json();
   const project = projects.find((p) => p.name === PROJECT_NAME);
