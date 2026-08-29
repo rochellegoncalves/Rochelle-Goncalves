@@ -24,7 +24,7 @@ export async function GET() {
     );
   }
 
-  const token = process.env.TODOIST_API_TOKEN;
+  const token = process.env.TODOIST_TOKEN;
   if (!token) {
     return NextResponse.json({ error: 'todoist_not_configured' }, { status: 500 });
   }
