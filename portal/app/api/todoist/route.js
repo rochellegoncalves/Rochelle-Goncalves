@@ -2,9 +2,28 @@ import { NextResponse } from 'next/server';
 import { createClient } from '../../../lib/supabaseServer';
 
 const PROJECT_NAME = '👩🏻‍💻 PROFISSIONAL';
+const API_BASE = 'https://api.todoist.com/api/v1';
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function extractList(json) {
+  if (Array.isArray(json)) return json;
+  if (json && Array.isArray(json.results)) return json.results;
+  return [];
+}
+
+async function todoistGet(path, headers) {
+  const res = await fetch(`${API_BASE}${path}`, { headers });
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    const error = new Error('todoist_api_error');
+    error.status = res.status;
+    error.body = bodyText.slice(0, 300);
+    throw error;
+  }
+  return extractList(await res.json());
 }
 
 export async function GET() {
@@ -31,22 +50,17 @@ export async function GET() {
 
   const headers = { Authorization: `Bearer ${token}` };
 
-  const projectsRes = await fetch('https://api.todoist.com/rest/v2/projects', { headers });
-  if (!projectsRes.ok) {
-    const bodyText = await projectsRes.text().catch(() => '');
+  let projects;
+  try {
+    projects = await todoistGet('/projects', headers);
+  } catch (e) {
     return NextResponse.json(
-      {
-        error: 'todoist_api_error',
-        status: projectsRes.status,
-        body: bodyText.slice(0, 300),
-        tokenLength: token.length,
-      },
+      { error: 'todoist_api_error', status: e.status, body: e.body, tokenLength: token.length },
       { status: 502 }
     );
   }
-  const projects = await projectsRes.json();
-  const project = projects.find((p) => p.name === PROJECT_NAME);
 
+  const project = projects.find((p) => p.name === PROJECT_NAME);
   if (!project) {
     return NextResponse.json(
       { error: 'project_not_found', availableProjects: projects.map((p) => p.name) },
@@ -54,12 +68,18 @@ export async function GET() {
     );
   }
 
-  const [sectionsRes, tasksRes] = await Promise.all([
-    fetch(`https://api.todoist.com/rest/v2/sections?project_id=${project.id}`, { headers }),
-    fetch(`https://api.todoist.com/rest/v2/tasks?project_id=${project.id}`, { headers }),
-  ]);
-  const sections = await sectionsRes.json();
-  const tasks = await tasksRes.json();
+  let sections, tasks;
+  try {
+    [sections, tasks] = await Promise.all([
+      todoistGet(`/sections?project_id=${project.id}`, headers),
+      todoistGet(`/tasks?project_id=${project.id}`, headers),
+    ]);
+  } catch (e) {
+    return NextResponse.json(
+      { error: 'todoist_api_error', status: e.status, body: e.body },
+      { status: 502 }
+    );
+  }
 
   const today = todayISO();
 
