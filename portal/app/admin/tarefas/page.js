@@ -95,7 +95,7 @@ export default function TarefasPage() {
                 <div>
                   <div style={styles.urgentTask}>{t.content}</div>
                   <div style={styles.urgentMeta}>
-                    {t.sectionName} · Prazo: {t.isOverdue ? formatDate(t.due) : 'hoje'}
+                    {t.groupName} · Prazo: {t.isOverdue ? formatDate(t.due) : 'hoje'}
                   </div>
                 </div>
                 <span

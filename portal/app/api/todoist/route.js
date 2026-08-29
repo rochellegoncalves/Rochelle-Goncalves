@@ -3,6 +3,7 @@ import { createClient } from '../../../lib/supabaseServer';
 
 const PROJECT_NAME = '👩🏻‍💻 PROFISSIONAL';
 const API_BASE = 'https://api.todoist.com/api/v1';
+const HEADER_PATTERN = /^\*\*(.+)\*\*$/;
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -24,6 +25,13 @@ async function todoistGet(path, headers) {
     throw error;
   }
   return extractList(await res.json());
+}
+
+function byDueDateAsc(a, b) {
+  if (!a.due && !b.due) return 0;
+  if (!a.due) return 1;
+  if (!b.due) return -1;
+  return a.due.localeCompare(b.due);
 }
 
 export async function GET() {
@@ -55,7 +63,7 @@ export async function GET() {
     projects = await todoistGet('/projects', headers);
   } catch (e) {
     return NextResponse.json(
-      { error: 'todoist_api_error', status: e.status, body: e.body, tokenLength: token.length },
+      { error: 'todoist_api_error', status: e.status, body: e.body },
       { status: 502 }
     );
   }
@@ -68,12 +76,9 @@ export async function GET() {
     );
   }
 
-  let sections, tasks;
+  let tasks;
   try {
-    [sections, tasks] = await Promise.all([
-      todoistGet(`/sections?project_id=${project.id}`, headers),
-      todoistGet(`/tasks?project_id=${project.id}`, headers),
-    ]);
+    tasks = await todoistGet(`/tasks?project_id=${project.id}`, headers);
   } catch (e) {
     return NextResponse.json(
       { error: 'todoist_api_error', status: e.status, body: e.body },
@@ -83,48 +88,58 @@ export async function GET() {
 
   const today = todayISO();
 
-  const sortedSections = [...sections].sort((a, b) => a.order - b.order);
+  // Todoist keeps the "order" field as the position in the list you see in
+  // the app -- that's what lets us tell which tasks fall under which
+  // "**Área**" header task.
+  const ordered = [...tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  const groups = sortedSections.map((section) => {
-    const sectionTasks = tasks
-      .filter((t) => t.section_id === section.id)
-      .map((t) => ({
-        id: t.id,
-        content: t.content,
-        due: t.due?.date || null,
-        priority: t.priority,
-        isOverdue: !!t.due?.date && t.due.date < today,
-        isToday: t.due?.date === today,
-      }));
-    return { id: section.id, name: section.name, tasks: sectionTasks };
-  });
+  const groups = [];
+  let current = null;
 
-  const looseTasks = tasks.filter((t) => !t.section_id);
-  if (looseTasks.length > 0) {
-    groups.push({
-      id: 'sem-secao',
-      name: 'Sem seção',
-      tasks: looseTasks.map((t) => ({
-        id: t.id,
-        content: t.content,
-        due: t.due?.date || null,
-        priority: t.priority,
-        isOverdue: !!t.due?.date && t.due.date < today,
-        isToday: t.due?.date === today,
-      })),
-    });
-  }
+  for (const t of ordered) {
+    const headerMatch = t.content.trim().match(HEADER_PATTERN);
+    if (headerMatch) {
+      current = { id: t.id, name: headerMatch[1].trim(), tasks: [] };
+      groups.push(current);
+      continue;
+    }
 
-  const urgent = tasks
-    .filter((t) => t.due?.date && t.due.date <= today)
-    .map((t) => ({
+    const task = {
       id: t.id,
       content: t.content,
-      due: t.due.date,
-      sectionName: sections.find((s) => s.id === t.section_id)?.name || 'Sem seção',
-      isOverdue: t.due.date < today,
-    }))
-    .sort((a, b) => a.due.localeCompare(b.due));
+      due: t.due?.date || null,
+      priority: t.priority,
+      isOverdue: !!t.due?.date && t.due.date < today,
+      isToday: t.due?.date === today,
+    };
+
+    if (!current) {
+      if (!groups.length || groups[0].id !== 'sem-area') {
+        groups.unshift({ id: 'sem-area', name: 'Sem área', tasks: [] });
+      }
+      groups[0].tasks.push(task);
+    } else {
+      current.tasks.push(task);
+    }
+  }
+
+  for (const group of groups) {
+    group.tasks.sort(byDueDateAsc);
+  }
+
+  const urgent = ordered
+    .filter((t) => !HEADER_PATTERN.test(t.content.trim()) && t.due?.date && t.due.date <= today)
+    .map((t) => {
+      const owningGroup = groups.find((g) => g.tasks.some((task) => task.id === t.id));
+      return {
+        id: t.id,
+        content: t.content,
+        due: t.due.date,
+        groupName: owningGroup?.name || 'Sem área',
+        isOverdue: t.due.date < today,
+      };
+    })
+    .sort(byDueDateAsc);
 
   return NextResponse.json({ groups, urgent });
 }
