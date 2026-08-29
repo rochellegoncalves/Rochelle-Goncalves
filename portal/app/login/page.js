@@ -69,7 +69,7 @@ export default function LoginPage() {
               {loading ? 'Enviando...' : 'Enviar código de acesso'}
             </button>
             <p style={styles.note}>
-              Você vai receber um código de 6 dígitos por e-mail para entrar — sem necessidade de senha.
+              Você vai receber um código por e-mail para entrar — sem necessidade de senha.
             </p>
           </form>
         )}
@@ -82,8 +82,8 @@ export default function LoginPage() {
               type="text"
               inputMode="numeric"
               required
-              placeholder="000000"
-              maxLength={6}
+              placeholder="Código recebido por e-mail"
+              maxLength={12}
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
