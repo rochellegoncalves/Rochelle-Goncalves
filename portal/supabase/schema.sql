@@ -25,7 +25,10 @@ alter table public.clients
   add column if not exists admin_name text,
   add column if not exists admin_cpf text,
   add column if not exists admin_rg text,
-  add column if not exists admin_email text;
+  add column if not exists admin_email text,
+  add column if not exists admin_nationality text,
+  add column if not exists admin_marital_status text,
+  add column if not exists admin_profession text;
 
 -- cpf_cnpj/address/phone acima são da EMPRESA (o cliente/CONTRATANTE).
 -- admin_name/admin_cpf/admin_rg/admin_email são da PESSOA que representa

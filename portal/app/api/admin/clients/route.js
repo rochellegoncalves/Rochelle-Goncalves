@@ -3,7 +3,7 @@ import { requireOwner } from '../../../../lib/requireOwner';
 import { createAdminClient } from '../../../../lib/supabaseAdmin';
 
 const SELECT_FIELDS =
-  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, monthly_value, contract_start_date, created_at, documents(count)';
+  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, admin_nationality, admin_marital_status, admin_profession, monthly_value, contract_start_date, created_at, documents(count)';
 
 function mapClient(c) {
   return {
@@ -16,6 +16,9 @@ function mapClient(c) {
     adminCpf: c.admin_cpf,
     adminRg: c.admin_rg,
     adminEmail: c.admin_email,
+    adminNationality: c.admin_nationality,
+    adminMaritalStatus: c.admin_marital_status,
+    adminProfession: c.admin_profession,
     monthlyValue: c.monthly_value,
     contractStartDate: c.contract_start_date,
     createdAt: c.created_at,
@@ -33,6 +36,9 @@ function fieldsFromBody(body) {
     admin_cpf: body.adminCpf || null,
     admin_rg: body.adminRg || null,
     admin_email: body.adminEmail || null,
+    admin_nationality: body.adminNationality || null,
+    admin_marital_status: body.adminMaritalStatus || null,
+    admin_profession: body.adminProfession || null,
     monthly_value: body.monthlyValue ? Number(body.monthlyValue) : null,
     contract_start_date: body.contractStartDate || null,
   };

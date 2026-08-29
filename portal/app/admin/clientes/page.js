@@ -15,6 +15,9 @@ const EMPTY_FORM = {
   adminCpf: '',
   adminRg: '',
   adminEmail: '',
+  adminNationality: '',
+  adminMaritalStatus: '',
+  adminProfession: '',
   monthlyValue: '',
   contractStartDate: '',
 };
@@ -79,6 +82,9 @@ export default function ClientesPage() {
       adminCpf: client.adminCpf || '',
       adminRg: client.adminRg || '',
       adminEmail: client.adminEmail || '',
+      adminNationality: client.adminNationality || '',
+      adminMaritalStatus: client.adminMaritalStatus || '',
+      adminProfession: client.adminProfession || '',
       monthlyValue: client.monthlyValue ?? '',
       contractStartDate: client.contractStartDate || '',
     });
@@ -239,6 +245,33 @@ export default function ClientesPage() {
                   value={form.adminEmail}
                   onChange={(e) => setForm({ ...form, adminEmail: e.target.value })}
                   placeholder="pessoal@exemplo.com"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Nacionalidade</label>
+                <input
+                  style={styles.input}
+                  value={form.adminNationality}
+                  onChange={(e) => setForm({ ...form, adminNationality: e.target.value })}
+                  placeholder="brasileiro(a)"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Estado civil</label>
+                <input
+                  style={styles.input}
+                  value={form.adminMaritalStatus}
+                  onChange={(e) => setForm({ ...form, adminMaritalStatus: e.target.value })}
+                  placeholder="casado(a)"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Profissão</label>
+                <input
+                  style={styles.input}
+                  value={form.adminProfession}
+                  onChange={(e) => setForm({ ...form, adminProfession: e.target.value })}
+                  placeholder="empresário(a)"
                 />
               </div>
             </div>
