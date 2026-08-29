@@ -69,7 +69,18 @@ cliente, em `/admin/clientes`). Os próximos passos pra fechar o ciclo:
 Ainda não construído -- falta decidir o provedor de assinatura antes de
 integrar.
 
-### 7. WhatsApp com histórico de mensagens dentro do CRM
+### 7. Botão "ver como o cliente vê" no cadastro do cliente
+Depois que a Área do Cliente tiver mais conteúdo de verdade (Plano de Ação,
+documentos, etc.), ela quer conseguir clicar num cliente em `/admin/clientes`
+e ver a tela exatamente como aquele cliente vê -- pra conferir se está tudo
+certo sem precisar logar com o e-mail dele. Passos prováveis: um botão
+"Ver área do cliente" no painel de detalhes do cliente que abre a Área do
+Cliente em modo leitura, usando as permissões da própria Rochelle (owner)
+mas filtrando os dados pelo `client_id` escolhido -- não precisa trocar de
+login. Construir só depois que a Área do Cliente tiver mais telas, pra não
+ficar revisando uma tela vazia.
+
+### 8. WhatsApp com histórico de mensagens dentro do CRM
 Ela quer ver as conversas de WhatsApp direto no CRM. Isso exige contratar
 acesso oficial à API do WhatsApp Business (Meta ou um intermediário tipo
 Twilio/Zenvia), passar pela verificação da Meta (pode levar dias/semanas),
