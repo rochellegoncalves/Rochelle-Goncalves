@@ -1,0 +1,60 @@
+-- Rochelle Gonçalves | Área do Cliente
+-- Cole este arquivo inteiro no Supabase: SQL Editor -> New query -> Run
+
+-- Tabela de clientes (um registro por empresa/cliente)
+create table if not exists public.clients (
+  id uuid primary key references auth.users(id) on delete cascade,
+  company_name text not null,
+  created_at timestamptz default now()
+);
+
+alter table public.clients enable row level security;
+
+create policy "Cliente vê apenas o próprio registro"
+  on public.clients for select
+  using (auth.uid() = id);
+
+-- Tabela de documentos
+create table if not exists public.documents (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients(id) on delete cascade,
+  name text not null,
+  category text,
+  file_path text not null,
+  created_at timestamptz default now()
+);
+
+alter table public.documents enable row level security;
+
+create policy "Cliente vê apenas os próprios documentos"
+  on public.documents for select
+  using (auth.uid() = client_id);
+
+-- Bucket de armazenamento para os arquivos dos documentos
+insert into storage.buckets (id, name, public)
+values ('documents', 'documents', false)
+on conflict (id) do nothing;
+
+create policy "Cliente baixa apenas os próprios arquivos"
+  on storage.objects for select
+  using (
+    bucket_id = 'documents'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- ------------------------------------------------------------------
+-- Como adicionar um cliente novo (por enquanto, manual, até termos o
+-- painel de administração pronto):
+--
+-- 1. Authentication -> Users -> Add user -> digite o e-mail do cliente
+--    (marque "Auto Confirm User")
+-- 2. Copie o UUID gerado para esse usuário
+-- 3. Table Editor -> clients -> Insert row:
+--    id = (o UUID copiado), company_name = "Nome da Empresa"
+-- 4. Para subir um documento: Storage -> bucket "documents" -> crie uma
+--    pasta com o mesmo UUID do cliente -> suba o arquivo lá dentro
+-- 5. Table Editor -> documents -> Insert row:
+--    client_id = (o UUID do cliente), name = "Nome do arquivo",
+--    category = "Financeiro" (por exemplo),
+--    file_path = "UUID_DO_CLIENTE/nome-do-arquivo.pdf"
+-- ------------------------------------------------------------------

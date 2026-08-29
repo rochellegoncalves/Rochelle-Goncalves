@@ -1,0 +1,33 @@
+:root {
+  --verde-profundo: #0F2D24;
+  --verde-oliva: #3C4A38;
+  --dourado: #C8A869;
+  --champagne: #E6DCC2;
+  --marfim: #F7F5F0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--marfim);
+  color: #1b241f;
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  color: var(--verde-profundo);
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}
