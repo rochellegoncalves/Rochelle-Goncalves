@@ -22,7 +22,15 @@ alter table public.clients
   add column if not exists phone text,
   add column if not exists monthly_value numeric,
   add column if not exists contract_start_date date,
-  add column if not exists admin_name text;
+  add column if not exists admin_name text,
+  add column if not exists admin_cpf text,
+  add column if not exists admin_rg text,
+  add column if not exists admin_email text;
+
+-- cpf_cnpj/address/phone acima são da EMPRESA (o cliente/CONTRATANTE).
+-- admin_name/admin_cpf/admin_rg/admin_email são da PESSOA que representa
+-- a empresa (sócio-administrador), quando o cliente é pessoa jurídica --
+-- são dados diferentes, cada um com seu próprio CPF/e-mail.
 
 -- Tabela de documentos
 create table if not exists public.documents (

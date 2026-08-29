@@ -8,10 +8,13 @@ import AdminSidebar from '../../../components/AdminSidebar';
 const EMPTY_FORM = {
   companyName: '',
   email: '',
-  adminName: '',
   cpfCnpj: '',
   address: '',
   phone: '',
+  adminName: '',
+  adminCpf: '',
+  adminRg: '',
+  adminEmail: '',
   monthlyValue: '',
   contractStartDate: '',
 };
@@ -69,10 +72,13 @@ export default function ClientesPage() {
     setForm({
       companyName: client.companyName || '',
       email: '',
-      adminName: client.adminName || '',
       cpfCnpj: client.cpfCnpj || '',
       address: client.address || '',
       phone: client.phone || '',
+      adminName: client.adminName || '',
+      adminCpf: client.adminCpf || '',
+      adminRg: client.adminRg || '',
+      adminEmail: client.adminEmail || '',
       monthlyValue: client.monthlyValue ?? '',
       contractStartDate: client.contractStartDate || '',
     });
@@ -119,86 +125,124 @@ export default function ClientesPage() {
 
         <div style={styles.panel}>
           <h3 style={styles.panelTitle}>{editingId ? 'Editar cliente' : 'Novo cliente'}</h3>
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.field}>
-              <label style={styles.label}>Nome completo / Razão social</label>
-              <input
-                style={styles.input}
-                required
-                value={form.companyName}
-                onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-                placeholder="Empresa Exemplo Ltda."
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Nome do administrador</label>
-              <input
-                style={styles.input}
-                value={form.adminName}
-                onChange={(e) => setForm({ ...form, adminName: e.target.value })}
-                placeholder="Quem responde e assina pela empresa"
-              />
-            </div>
-            {!editingId && (
+          <form onSubmit={handleSubmit}>
+            <h4 style={styles.sectionTitle}>Dados da empresa (CONTRATANTE)</h4>
+            <div style={styles.form}>
               <div style={styles.field}>
-                <label style={styles.label}>E-mail do cliente</label>
+                <label style={styles.label}>Nome completo / Razão social</label>
+                <input
+                  style={styles.input}
+                  required
+                  value={form.companyName}
+                  onChange={(e) => setForm({ ...form, companyName: e.target.value })}
+                  placeholder="Empresa Exemplo Ltda."
+                />
+              </div>
+              {!editingId && (
+                <div style={styles.field}>
+                  <label style={styles.label}>E-mail de login (área do cliente)</label>
+                  <input
+                    style={styles.input}
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="contato@empresaexemplo.com.br"
+                  />
+                </div>
+              )}
+              <div style={styles.field}>
+                <label style={styles.label}>CNPJ (ou CPF, se pessoa física)</label>
+                <input
+                  style={styles.input}
+                  value={form.cpfCnpj}
+                  onChange={(e) => setForm({ ...form, cpfCnpj: e.target.value })}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Telefone</label>
+                <input
+                  style={styles.input}
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="(19) 99999-9999"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Endereço (sede)</label>
+                <input
+                  style={styles.input}
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="Rua Exemplo, 123 - Campinas/SP"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Valor mensal (R$)</label>
+                <input
+                  style={styles.input}
+                  type="number"
+                  step="0.01"
+                  value={form.monthlyValue}
+                  onChange={(e) => setForm({ ...form, monthlyValue: e.target.value })}
+                  placeholder="2500"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Início do contrato</label>
+                <input
+                  style={styles.input}
+                  type="date"
+                  value={form.contractStartDate}
+                  onChange={(e) => setForm({ ...form, contractStartDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <h4 style={styles.sectionTitle}>
+              Dados do administrador (quem assina pela empresa, se for pessoa jurídica)
+            </h4>
+            <div style={styles.form}>
+              <div style={styles.field}>
+                <label style={styles.label}>Nome do administrador</label>
+                <input
+                  style={styles.input}
+                  value={form.adminName}
+                  onChange={(e) => setForm({ ...form, adminName: e.target.value })}
+                  placeholder="Nome completo de quem assina"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>CPF do administrador</label>
+                <input
+                  style={styles.input}
+                  value={form.adminCpf}
+                  onChange={(e) => setForm({ ...form, adminCpf: e.target.value })}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>RG do administrador</label>
+                <input
+                  style={styles.input}
+                  value={form.adminRg}
+                  onChange={(e) => setForm({ ...form, adminRg: e.target.value })}
+                  placeholder="00.000.000-0"
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>E-mail do administrador</label>
                 <input
                   style={styles.input}
                   type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="contato@empresaexemplo.com.br"
+                  value={form.adminEmail}
+                  onChange={(e) => setForm({ ...form, adminEmail: e.target.value })}
+                  placeholder="pessoal@exemplo.com"
                 />
               </div>
-            )}
-            <div style={styles.field}>
-              <label style={styles.label}>CPF/CNPJ</label>
-              <input
-                style={styles.input}
-                value={form.cpfCnpj}
-                onChange={(e) => setForm({ ...form, cpfCnpj: e.target.value })}
-                placeholder="00.000.000/0000-00"
-              />
             </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Telefone</label>
-              <input
-                style={styles.input}
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="(19) 99999-9999"
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Endereço</label>
-              <input
-                style={styles.input}
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="Rua Exemplo, 123 - Campinas/SP"
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Valor mensal (R$)</label>
-              <input
-                style={styles.input}
-                type="number"
-                step="0.01"
-                value={form.monthlyValue}
-                onChange={(e) => setForm({ ...form, monthlyValue: e.target.value })}
-                placeholder="2500"
-              />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Início do contrato</label>
-              <input
-                style={styles.input}
-                type="date"
-                value={form.contractStartDate}
-                onChange={(e) => setForm({ ...form, contractStartDate: e.target.value })}
-              />
-            </div>
+
             <div style={styles.formActions}>
               <button style={styles.button} type="submit" disabled={saving}>
                 {saving ? 'Salvando...' : editingId ? 'Salvar edição' : 'Adicionar cliente'}
@@ -254,6 +298,16 @@ const styles = {
   error: { color: '#c8493a', marginBottom: 20 },
   panel: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, padding: 24, marginBottom: 32 },
   panelTitle: { fontSize: '1rem', marginBottom: 16, fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
+  sectionTitle: {
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    color: '#3C4A38',
+    opacity: 0.7,
+    margin: '20px 0 12px',
+    paddingTop: 16,
+    borderTop: '1px solid rgba(15,45,36,0.08)',
+  },
   form: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
