@@ -49,6 +49,17 @@ export default function DocumentosPage() {
     }
   }
 
+  async function handleDelete(docId) {
+    if (!window.confirm('Excluir este documento? Essa ação não pode ser desfeita.')) return;
+    const res = await fetch(`/api/admin/documents?id=${docId}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      setError(`Erro ao excluir (${res.status}): ${JSON.stringify(errBody)}`);
+      return;
+    }
+    await loadDocuments(selectedClientId);
+  }
+
   useEffect(() => {
     loadDocuments(selectedClientId);
   }, [selectedClientId]);
@@ -176,11 +187,15 @@ export default function DocumentosPage() {
               </form>
             </div>
 
+            <h2 style={styles.tableTitle}>
+              Documentos de {clients.find((c) => c.id === selectedClientId)?.companyName || ''}
+            </h2>
             <div style={styles.tableWrap}>
               <div style={styles.tableHeadRow}>
                 <span>Documento</span>
                 <span>Categoria</span>
                 <span>Enviado em</span>
+                <span></span>
               </div>
               {documents.length === 0 && <p style={styles.emptyStateInline}>Nenhum documento para este cliente ainda.</p>}
               {documents.map((d) => (
@@ -188,6 +203,9 @@ export default function DocumentosPage() {
                   <span style={styles.docName}>{d.name}</span>
                   <span>{d.category || '—'}</span>
                   <span>{new Date(d.created_at).toLocaleDateString('pt-BR')}</span>
+                  <button style={styles.deleteButton} onClick={() => handleDelete(d.id)}>
+                    Excluir
+                  </button>
                 </div>
               ))}
             </div>
@@ -221,24 +239,38 @@ const styles = {
     fontSize: '0.85rem',
     height: 42,
   },
+  tableTitle: { fontSize: '1rem', margin: '0 0 12px', fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
   tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
   tableHeadRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr',
+    gridTemplateColumns: '2fr 1fr 1fr auto',
     padding: '12px 20px',
     fontSize: '0.72rem',
     textTransform: 'uppercase',
     color: '#3C4A38',
     fontWeight: 700,
     background: '#E6DCC2',
+    alignItems: 'center',
   },
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr',
+    gridTemplateColumns: '2fr 1fr 1fr auto',
     padding: '14px 20px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
     fontSize: '0.88rem',
+    alignItems: 'center',
   },
   docName: { fontWeight: 600 },
   emptyStateInline: { padding: 20, color: '#3C4A38', margin: 0 },
+  deleteButton: {
+    background: 'none',
+    border: '1px solid rgba(217,88,74,0.4)',
+    color: '#d9584a',
+    padding: '6px 14px',
+    borderRadius: 4,
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    justifySelf: 'end',
+  },
 };

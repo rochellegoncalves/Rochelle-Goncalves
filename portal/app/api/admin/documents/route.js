@@ -49,3 +49,35 @@ export async function POST(request) {
 
   return NextResponse.json({ ok: true, filePath });
 }
+
+export async function DELETE(request) {
+  const { error } = await requireOwner();
+  if (error) return error;
+
+  const documentId = new URL(request.url).searchParams.get('id');
+  if (!documentId) {
+    return NextResponse.json({ error: 'missing_id' }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+  const { data: doc, error: fetchError } = await admin
+    .from('documents')
+    .select('file_path')
+    .eq('id', documentId)
+    .single();
+  if (fetchError) {
+    return NextResponse.json({ error: fetchError.message }, { status: 500 });
+  }
+
+  const { error: storageError } = await admin.storage.from('documents').remove([doc.file_path]);
+  if (storageError) {
+    return NextResponse.json({ error: storageError.message }, { status: 500 });
+  }
+
+  const { error: deleteError } = await admin.from('documents').delete().eq('id', documentId);
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}
