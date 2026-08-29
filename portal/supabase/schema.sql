@@ -46,6 +46,9 @@ create table if not exists public.documents (
   created_at timestamptz default now()
 );
 
+alter table public.documents
+  add column if not exists autentique_document_id text;
+
 alter table public.documents enable row level security;
 
 create policy "Cliente vê apenas os próprios documentos"

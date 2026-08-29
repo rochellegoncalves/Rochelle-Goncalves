@@ -25,15 +25,17 @@ mutation CreateDocumentMutation(
       name
       email
       link { short_link }
+      email_events { sent delivered opened refused reason }
     }
   }
 }
 `;
 
 // Manda o PDF do contrato pro Autentique pra coleta de assinatura
-// eletrônica. O signatário é o administrador cadastrado (ou o e-mail de
-// login do cliente, se não houver e-mail do administrador). O Autentique
-// já cuida de avisar o signatário por e-mail.
+// eletrônica, guarda o PDF (ainda não assinado) na área do cliente, e
+// registra o id do documento no Autentique nessa mesma linha -- é assim
+// que o webhook (/api/webhooks/autentique) depois encontra qual cliente
+// atualizar quando o documento for assinado.
 export async function POST(request) {
   const { error } = await requireOwner();
   if (error) return error;
@@ -90,7 +92,7 @@ export async function POST(request) {
   const variables = {
     sandbox: false,
     document: { name: `Contrato - ${client.company_name}`.slice(0, 199) },
-    signers: [{ email: signerEmail, action: 'SIGN' }],
+    signers: [{ email: signerEmail, action: 'SIGN', name: signerName }],
     file: null,
   };
 
@@ -115,11 +117,27 @@ export async function POST(request) {
   }
 
   const doc = result?.data?.createDocument;
+
+  const filePath = `${clientId}/contrato-enviado-${Date.now()}.pdf`;
+  const { error: uploadError } = await admin.storage
+    .from('documents')
+    .upload(filePath, Buffer.from(pdfBytes), { contentType: 'application/pdf' });
+
+  if (!uploadError) {
+    await admin.from('documents').insert({
+      client_id: clientId,
+      name: 'Contrato de Prestação de Serviços (aguardando assinatura)',
+      category: 'Contrato',
+      file_path: filePath,
+      autentique_document_id: doc?.id || null,
+    });
+  }
+
   return NextResponse.json({
     ok: true,
     documentId: doc?.id,
-    signerEmail,
     signerName,
-    signLink: doc?.signatures?.[0]?.link?.short_link || null,
+    signerEmail,
+    signatures: doc?.signatures || [],
   });
 }

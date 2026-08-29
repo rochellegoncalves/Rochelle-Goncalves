@@ -203,9 +203,19 @@ export default function DocumentosPage() {
                   <span style={styles.docName}>{d.name}</span>
                   <span>{d.category || '—'}</span>
                   <span>{new Date(d.created_at).toLocaleDateString('pt-BR')}</span>
-                  <button style={styles.deleteButton} onClick={() => handleDelete(d.id)}>
-                    Excluir
-                  </button>
+                  <div style={styles.rowActions}>
+                    <a
+                      style={styles.viewButton}
+                      href={`/api/admin/documents/download?id=${d.id}`}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      Ver
+                    </a>
+                    <button style={styles.deleteButton} onClick={() => handleDelete(d.id)}>
+                      Excluir
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -277,6 +287,17 @@ const styles = {
   },
   docName: { fontWeight: 600 },
   emptyStateInline: { padding: 20, color: '#3C4A38', margin: 0 },
+  rowActions: { display: 'flex', gap: 8, justifySelf: 'end' },
+  viewButton: {
+    background: 'none',
+    border: '1px solid rgba(15,45,36,0.2)',
+    color: '#0F2D24',
+    padding: '6px 14px',
+    borderRadius: 4,
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
   deleteButton: {
     background: 'none',
     border: '1px solid rgba(217,88,74,0.4)',
@@ -286,6 +307,5 @@ const styles = {
     fontSize: '0.78rem',
     fontWeight: 600,
     cursor: 'pointer',
-    justifySelf: 'end',
   },
 };

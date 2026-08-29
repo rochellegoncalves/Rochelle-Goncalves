@@ -385,10 +385,17 @@ export default function ClientesPage() {
             </div>
 
             {signatureResult && (
-              <p style={styles.signatureNote}>
-                Enviado para assinatura de <strong>{signatureResult.signerName}</strong> (
-                {signatureResult.signerEmail}). O Autentique já mandou o e-mail de assinatura pra ela(e).
-              </p>
+              <div style={styles.signatureNote}>
+                <p style={{ margin: '0 0 4px' }}>
+                  Enviado para assinatura de <strong>{signatureResult.signerName}</strong> (
+                  {signatureResult.signerEmail}). Documento no Autentique: {signatureResult.documentId}.
+                </p>
+                <p style={{ margin: 0, fontSize: '0.78rem', opacity: 0.85 }}>
+                  Se o e-mail não chegar em alguns minutos: confira o spam, confira se esse documento
+                  aparece em autentique.com.br com esse mesmo ID, e confira se o e-mail do administrador
+                  está certo. O contrato (ainda não assinado) já está salvo em Documentos.
+                </p>
+              </div>
             )}
 
             <h4 style={styles.sectionTitle}>Dados da empresa (CONTRATANTE)</h4>
