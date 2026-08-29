@@ -25,7 +25,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const token = process.env.AUTENTIQUE_TOKEN;
+  const token = process.env.AUTENTIQUE_API_TOKEN;
   if (!token) {
     return NextResponse.json({ ok: true, note: 'autentique_token_not_configured' });
   }

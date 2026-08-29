@@ -45,7 +45,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'missing_client_id' }, { status: 400 });
   }
 
-  const token = process.env.AUTENTIQUE_TOKEN;
+  const token = process.env.AUTENTIQUE_API_TOKEN;
   if (!token) {
     return NextResponse.json({ error: 'autentique_token_not_configured' }, { status: 500 });
   }
