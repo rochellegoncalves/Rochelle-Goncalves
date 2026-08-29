@@ -32,12 +32,9 @@ export default function TarefasPage() {
       }
 
       const res = await fetch('/api/todoist');
-      if (res.status === 403) {
-        router.replace('/dashboard');
-        return;
-      }
       if (!res.ok) {
-        setError('Não foi possível carregar as tarefas do Todoist agora.');
+        const body = await res.json().catch(() => ({}));
+        setError(`Erro (${res.status}): ${JSON.stringify(body)}`);
         setLoading(false);
         return;
       }

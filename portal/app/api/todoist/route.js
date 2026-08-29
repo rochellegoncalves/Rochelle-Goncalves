@@ -15,7 +15,13 @@ export async function GET() {
 
   const ownerEmail = process.env.OWNER_EMAIL;
   if (!user || !ownerEmail || user.email !== ownerEmail) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: 'forbidden',
+        debug: { userEmail: user?.email || null, ownerEmailConfigured: !!ownerEmail, ownerEmail },
+      },
+      { status: 403 }
+    );
   }
 
   const token = process.env.TODOIST_API_TOKEN;
