@@ -13,6 +13,12 @@
    tela de Plano de Ação do cliente, como já desenhado no mockup.
 3. **Resto do Painel do Negócio** -- rentabilidade por cliente, timesheet e
    o cronômetro de horas, como já desenhado no mockup.
+4. **Domínio bonito pra Área do Cliente** -- hoje o botão "Área do Cliente"
+   no site aponta pro endereço feio de preview do Vercel
+   (rochelle-goncalves-git-claude-client-portal-rochelle1.vercel.app).
+   Configurar algo como `app.rochellegoncalves.com.br` (mesmo processo que
+   fizemos pro domínio principal: registro no Vercel + registro DNS no
+   Registro.br).
 
 ## Ideias para depois (backlog, sem ordem definida)
 
@@ -42,3 +48,19 @@ Ainda não está claro se isso significa (a) dar mais contexto sobre a
 metodologia dela pra mim (Claude) usar em conversas futuras, ou (b) construir
 uma biblioteca de conhecimento dentro da própria plataforma (pra ela ou pros
 clientes). Perguntar pra ela qual das duas -- ou as duas -- antes de começar.
+
+### 5. CRM (contatos + funil)
+Cadastro de contatos/leads com etapas (Prospect -> Proposta -> Negociação ->
+Cliente) e histórico de notas/interações por contato. Provavelmente entra
+dentro do Painel do Negócio, e pode reaproveitar/conversar com a tabela
+`clients` que já existe.
+
+### 6. WhatsApp com histórico de mensagens dentro do CRM
+Ela quer ver as conversas de WhatsApp direto no CRM. Isso exige contratar
+acesso oficial à API do WhatsApp Business (Meta ou um intermediário tipo
+Twilio/Zenvia), passar pela verificação da Meta (pode levar dias/semanas),
+decidir um número de telefone dedicado, e aceitar custo por mensagem. Do
+lado da construção, precisa de uma central que recebe as mensagens em tempo
+real (webhook) e guarda no banco. Enquanto isso não sai do papel, dá pra
+colocar um botão simples "Abrir WhatsApp" (link direto, sem custo, sem
+aprovação) em cada contato do CRM.
