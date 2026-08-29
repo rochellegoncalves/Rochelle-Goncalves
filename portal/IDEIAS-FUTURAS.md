@@ -63,13 +63,17 @@ Ela mandou o modelo real do contrato de consultoria. Status:
    real dela, já preenchido com os dados da empresa e do administrador, e
    salva automaticamente como documento (categoria "Contrato") na área
    daquele cliente.
-2. Mandar esse PDF pra assinatura eletrônica -- ainda falta escolher um
-   provedor (ex.: Autentique, Clicksign, ZapSign ou D4Sign, todos usados no
-   Brasil e com validade jurídica), criar conta lá e integrar a API deles.
-3. Guardar o contrato assinado (voltando do provedor de assinatura) como
-   documento na área do cliente -- já dá pra fazer isso hoje manualmente
-   (upload em Documentos), só falta automatizar quando tiver o provedor
-   escolhido.
+2. ~~Mandar esse PDF pra assinatura eletrônica~~ -- **feito**. Ela já usa o
+   Autentique, então integramos direto: botão "Enviar p/ assinatura
+   (Autentique)" no painel de detalhes do cliente manda o PDF pra API deles
+   (`AUTENTIQUE_TOKEN` configurado no Vercel), com o administrador do
+   cliente como signatário. O Autentique manda o e-mail de assinatura
+   automaticamente.
+3. Guardar o contrato assinado (voltando do Autentique) como documento na
+   área do cliente -- ainda falta automatizar. Hoje dá pra baixar o
+   assinado no próprio Autentique e subir manualmente em Documentos; pra
+   automatizar, precisa configurar um webhook do Autentique avisando
+   quando o documento for assinado por todos.
 
 ### 7. Botão "ver como o cliente vê" no cadastro do cliente
 Depois que a Área do Cliente tiver mais conteúdo de verdade (Plano de Ação,
