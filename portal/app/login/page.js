@@ -23,7 +23,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (sendError) {
-      setError('Não encontramos um cadastro com esse e-mail. Confira e tente novamente.');
+      setError(`Erro ao enviar código: ${sendError.message}`);
       return;
     }
     setStep('code');
