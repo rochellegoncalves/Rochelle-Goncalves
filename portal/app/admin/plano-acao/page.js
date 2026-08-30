@@ -182,96 +182,80 @@ function PlanoAcaoPageInner() {
                 cliente e cole o link da planilha do Google Sheets dele.
               </p>
             ) : (
-              <div>
+              <div style={styles.tableWrap}>
+                <div style={styles.tableHeadRow}>
+                  <span>Reunião</span>
+                  <span>Ação</span>
+                  <span>Diagnóstico</span>
+                  <span>Responsável</span>
+                  <span>Prazo</span>
+                  <span>Status</span>
+                  <span>OBS</span>
+                </div>
                 {visibleItems.length === 0 && (
                   <p style={styles.emptyStateInline}>Nenhuma ação pendente por aqui.</p>
                 )}
                 {visibleItems.map((item) => (
-                  <div key={item.rowNumber} style={styles.card}>
-                    <div style={styles.cardTopRow}>
-                      <div style={styles.field}>
-                        <label style={styles.fieldLabel}>Reunião</label>
-                        <input
-                          type="date"
-                          style={styles.dateInput}
-                          value={item.reuniao || ''}
-                          disabled={savingKey === `${item.rowNumber}-reuniao`}
-                          onChange={(e) => handleImmediateChange(item.rowNumber, 'reuniao', e.target.value)}
-                        />
-                      </div>
-                      <select
-                        style={{
-                          ...styles.statusSelect,
-                          ...(STATUS_STYLE[item.status] || {}),
-                          opacity: savingKey === `${item.rowNumber}-status` ? 0.5 : 1,
-                        }}
-                        value={item.status || ''}
-                        disabled={savingKey === `${item.rowNumber}-status`}
-                        onChange={(e) => handleImmediateChange(item.rowNumber, 'status', e.target.value)}
-                      >
-                        {!STATUS_OPTIONS.includes(item.status) && item.status && (
-                          <option value={item.status}>{item.status}</option>
-                        )}
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div style={styles.field}>
-                      <label style={styles.fieldLabel}>Ação</label>
-                      <textarea
-                        style={styles.acaoTextarea}
-                        value={item.acao}
-                        onChange={(e) => handleTextChange(item.rowNumber, 'acao', e.target.value)}
-                        onBlur={() => handleTextBlur(item.rowNumber, 'acao')}
-                        rows={2}
-                      />
-                    </div>
-
-                    <div style={styles.field}>
-                      <label style={styles.fieldLabel}>Diagnóstico</label>
-                      <textarea
-                        style={styles.diagnosticoTextarea}
-                        value={item.diagnostico}
-                        onChange={(e) => handleTextChange(item.rowNumber, 'diagnostico', e.target.value)}
-                        onBlur={() => handleTextBlur(item.rowNumber, 'diagnostico')}
-                        rows={2}
-                      />
-                    </div>
-
-                    <div style={styles.cardBottomRow}>
-                      <div style={styles.field}>
-                        <label style={styles.fieldLabel}>Responsável</label>
-                        <input
-                          style={styles.textInput}
-                          value={item.responsavel}
-                          onChange={(e) => handleTextChange(item.rowNumber, 'responsavel', e.target.value)}
-                          onBlur={() => handleTextBlur(item.rowNumber, 'responsavel')}
-                        />
-                      </div>
-                      <div style={styles.field}>
-                        <label style={styles.fieldLabel}>Prazo</label>
-                        <input
-                          type="date"
-                          style={styles.dateInput}
-                          value={item.prazo || ''}
-                          disabled={savingKey === `${item.rowNumber}-prazo`}
-                          onChange={(e) => handleImmediateChange(item.rowNumber, 'prazo', e.target.value)}
-                        />
-                      </div>
-                      <div style={{ ...styles.field, flex: 1 }}>
-                        <label style={styles.fieldLabel}>OBS</label>
-                        <input
-                          style={styles.textInput}
-                          value={item.obs}
-                          onChange={(e) => handleTextChange(item.rowNumber, 'obs', e.target.value)}
-                          onBlur={() => handleTextBlur(item.rowNumber, 'obs')}
-                        />
-                      </div>
-                    </div>
+                  <div key={item.rowNumber} style={styles.tableRow}>
+                    <input
+                      type="date"
+                      style={styles.dateInput}
+                      value={item.reuniao || ''}
+                      disabled={savingKey === `${item.rowNumber}-reuniao`}
+                      onChange={(e) => handleImmediateChange(item.rowNumber, 'reuniao', e.target.value)}
+                    />
+                    <textarea
+                      style={styles.acaoTextarea}
+                      value={item.acao}
+                      onChange={(e) => handleTextChange(item.rowNumber, 'acao', e.target.value)}
+                      onBlur={() => handleTextBlur(item.rowNumber, 'acao')}
+                      rows={3}
+                    />
+                    <textarea
+                      style={styles.diagnosticoTextarea}
+                      value={item.diagnostico}
+                      onChange={(e) => handleTextChange(item.rowNumber, 'diagnostico', e.target.value)}
+                      onBlur={() => handleTextBlur(item.rowNumber, 'diagnostico')}
+                      rows={3}
+                    />
+                    <input
+                      style={styles.textInput}
+                      value={item.responsavel}
+                      onChange={(e) => handleTextChange(item.rowNumber, 'responsavel', e.target.value)}
+                      onBlur={() => handleTextBlur(item.rowNumber, 'responsavel')}
+                    />
+                    <input
+                      type="date"
+                      style={styles.dateInput}
+                      value={item.prazo || ''}
+                      disabled={savingKey === `${item.rowNumber}-prazo`}
+                      onChange={(e) => handleImmediateChange(item.rowNumber, 'prazo', e.target.value)}
+                    />
+                    <select
+                      style={{
+                        ...styles.statusSelect,
+                        ...(STATUS_STYLE[item.status] || {}),
+                        opacity: savingKey === `${item.rowNumber}-status` ? 0.5 : 1,
+                      }}
+                      value={item.status || ''}
+                      disabled={savingKey === `${item.rowNumber}-status`}
+                      onChange={(e) => handleImmediateChange(item.rowNumber, 'status', e.target.value)}
+                    >
+                      {!STATUS_OPTIONS.includes(item.status) && item.status && (
+                        <option value={item.status}>{item.status}</option>
+                      )}
+                      {STATUS_OPTIONS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      style={styles.textInput}
+                      value={item.obs}
+                      onChange={(e) => handleTextChange(item.rowNumber, 'obs', e.target.value)}
+                      onBlur={() => handleTextBlur(item.rowNumber, 'obs')}
+                    />
                   </div>
                 ))}
               </div>
@@ -309,20 +293,33 @@ const styles = {
     border: '1px solid rgba(15,45,36,0.08)',
     borderRadius: 6,
   },
-  card: {
+  tableWrap: {
     background: '#fff',
     border: '1px solid rgba(15,45,36,0.08)',
     borderRadius: 6,
-    padding: '16px 20px',
-    marginBottom: 14,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
+    overflow: 'auto',
   },
-  cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
-  cardBottomRow: { display: 'flex', gap: 14, flexWrap: 'wrap' },
-  field: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 120 },
-  fieldLabel: { fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: '#3C4A38', opacity: 0.65 },
+  tableHeadRow: {
+    display: 'grid',
+    gridTemplateColumns: '110px 2fr 2fr 1fr 110px 130px 1.2fr',
+    padding: '10px 16px',
+    fontSize: '0.66rem',
+    textTransform: 'uppercase',
+    color: '#3C4A38',
+    fontWeight: 700,
+    background: '#E6DCC2',
+    gap: 10,
+    minWidth: 1000,
+  },
+  tableRow: {
+    display: 'grid',
+    gridTemplateColumns: '110px 2fr 2fr 1fr 110px 130px 1.2fr',
+    padding: '10px 16px',
+    borderTop: '1px solid rgba(15,45,36,0.06)',
+    gap: 10,
+    alignItems: 'start',
+    minWidth: 1000,
+  },
   dateInput: {
     border: '1px solid rgba(15,45,36,0.15)',
     borderRadius: 4,
