@@ -39,10 +39,12 @@ sozinho em Documentos quando assinado. A partir daqui, ordem sugerida:
    a planilha de relacionamentos/contatos pra dentro de "Minhas Tarefas" como
    mais uma área, parecido com a sincronização do Plano de Ação.
 
-8. **Edição de data nas tarefas refletindo no Todoist** -- hoje "Minhas
-   Tarefas" só lê do Todoist. Ela quer poder mudar o prazo direto na nossa
-   tela e isso atualizar o Todoist de verdade (via POST/update na API v1) --
-   virar via de mão dupla, não só leitura.
+8. ~~Edição de data nas tarefas refletindo no Todoist~~ -- **feito**. Cada
+   tarefa em "Minhas Tarefas" tem um campo de data editável que atualiza o
+   Todoist de verdade (POST na API v1). A direção contrária (mudar no
+   Todoist e refletir aqui) já funcionava, já que a tela sempre busca os
+   dados direto de lá a cada carregamento -- agora é via de mão dupla
+   completa.
 
 9. **Base técnica dela como contexto** -- ainda não está claro se significa
    (a) dar mais contexto sobre a metodologia pra mim (Claude) usar em
