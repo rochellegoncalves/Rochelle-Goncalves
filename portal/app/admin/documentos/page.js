@@ -23,6 +23,8 @@ function DocumentosPageInner() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({ name: '', category: '', file: null });
+  const [importing, setImporting] = useState(false);
+  const [importForm, setImportForm] = useState({ name: '', category: '', docUrl: '' });
 
   useEffect(() => {
     async function init() {
@@ -133,6 +135,35 @@ function DocumentosPageInner() {
     }
   }
 
+  async function handleImport(e) {
+    e.preventDefault();
+    if (!importForm.docUrl || !importForm.name) return;
+    setImporting(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/admin/documents/import-google-doc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: selectedClientId,
+          docUrl: importForm.docUrl,
+          name: importForm.name,
+          category: importForm.category,
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        setError(`Erro ao importar do Google Docs (${res.status}): ${JSON.stringify(errBody)}`);
+        return;
+      }
+      setImportForm({ name: '', category: '', docUrl: '' });
+      await loadDocuments(selectedClientId);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   if (loading) return <div style={styles.loading}>Carregando...</div>;
 
   return (
@@ -198,6 +229,48 @@ function DocumentosPageInner() {
                 </div>
                 <button style={styles.button} type="submit" disabled={uploading}>
                   {uploading ? 'Enviando...' : 'Subir documento'}
+                </button>
+              </form>
+            </div>
+
+            <div style={styles.panel}>
+              <h2 style={styles.tableTitle}>Importar do Google Docs</h2>
+              <p style={styles.sub}>
+                Cole o link de um Google Doc compartilhado com a conta de serviço e ele vira um PDF
+                nos documentos do cliente selecionado acima.
+              </p>
+              <form onSubmit={handleImport} style={styles.form}>
+                <div style={styles.field}>
+                  <label style={styles.label}>Nome do documento</label>
+                  <input
+                    style={styles.input}
+                    required
+                    value={importForm.name}
+                    onChange={(e) => setImportForm({ ...importForm, name: e.target.value })}
+                    placeholder="Diagnóstico Inicial"
+                  />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Categoria</label>
+                  <input
+                    style={styles.input}
+                    value={importForm.category}
+                    onChange={(e) => setImportForm({ ...importForm, category: e.target.value })}
+                    placeholder="Diagnóstico"
+                  />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Link do Google Doc</label>
+                  <input
+                    style={styles.input}
+                    required
+                    value={importForm.docUrl}
+                    onChange={(e) => setImportForm({ ...importForm, docUrl: e.target.value })}
+                    placeholder="https://docs.google.com/document/d/..."
+                  />
+                </div>
+                <button style={styles.button} type="submit" disabled={importing}>
+                  {importing ? 'Importando...' : 'Importar'}
                 </button>
               </form>
             </div>

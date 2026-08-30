@@ -9,6 +9,14 @@ export function extractSpreadsheetId(urlOrId) {
   return match ? match[1] : urlOrId.trim();
 }
 
+// Extrai o ID de um Google Doc a partir de uma URL colada pela Rochelle
+// (ex.: https://docs.google.com/document/d/ABC123/edit -> ABC123).
+export function extractDocId(urlOrId) {
+  if (!urlOrId) return null;
+  const match = urlOrId.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : urlOrId.trim();
+}
+
 function getAuth() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -18,10 +26,17 @@ function getAuth() {
   return new google.auth.JWT({
     email,
     key: privateKey,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    scopes: [
+      'https://www.googleapis.com/auth/spreadsheets',
+      'https://www.googleapis.com/auth/drive.readonly',
+    ],
   });
 }
 
 export function getSheetsClient() {
   return google.sheets({ version: 'v4', auth: getAuth() });
+}
+
+export function getDriveClient() {
+  return google.drive({ version: 'v3', auth: getAuth() });
 }
