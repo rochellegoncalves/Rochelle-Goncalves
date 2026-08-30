@@ -203,8 +203,8 @@ function PlanoAcaoPageInner() {
               <div style={styles.tableWrap}>
                 <div style={styles.tableHeadRow}>
                   <span>Reunião</span>
-                  <span>Ação</span>
                   <span>Diagnóstico</span>
+                  <span>Ação</span>
                   <span>Responsável</span>
                   <span>Prazo</span>
                   <span>Status</span>
@@ -224,17 +224,6 @@ function PlanoAcaoPageInner() {
                     />
                     <textarea
                       ref={autoResize}
-                      style={styles.acaoTextarea}
-                      value={item.acao}
-                      onChange={(e) => {
-                        handleTextChange(item.rowNumber, 'acao', e.target.value);
-                        autoResize(e.target);
-                      }}
-                      onBlur={() => handleTextBlur(item.rowNumber, 'acao')}
-                      rows={2}
-                    />
-                    <textarea
-                      ref={autoResize}
                       style={styles.diagnosticoTextarea}
                       value={item.diagnostico}
                       onChange={(e) => {
@@ -242,6 +231,17 @@ function PlanoAcaoPageInner() {
                         autoResize(e.target);
                       }}
                       onBlur={() => handleTextBlur(item.rowNumber, 'diagnostico')}
+                      rows={2}
+                    />
+                    <textarea
+                      ref={autoResize}
+                      style={styles.acaoTextarea}
+                      value={item.acao}
+                      onChange={(e) => {
+                        handleTextChange(item.rowNumber, 'acao', e.target.value);
+                        autoResize(e.target);
+                      }}
+                      onBlur={() => handleTextBlur(item.rowNumber, 'acao')}
                       rows={2}
                     />
                     <select
