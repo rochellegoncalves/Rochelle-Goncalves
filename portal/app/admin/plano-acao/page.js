@@ -7,9 +7,9 @@ import AdminSidebar from '../../../components/AdminSidebar';
 
 const STATUS_OPTIONS = ['Não iniciado', 'Em andamento', 'Concluído'];
 const STATUS_STYLE = {
-  'Não iniciado': { background: 'rgba(15,45,36,0.06)', color: '#3C4A38' },
+  'Não iniciado': { background: 'rgba(200,73,58,0.15)', color: '#a23929' },
   'Em andamento': { background: 'rgba(200,168,105,0.2)', color: '#8a6d2f' },
-  Concluído: { background: 'rgba(139,165,143,0.2)', color: '#4c6350' },
+  Concluído: { background: 'rgba(58,140,82,0.18)', color: '#2f6b41' },
 };
 
 export default function PlanoAcaoPage() {
@@ -32,7 +32,15 @@ function PlanoAcaoPageInner() {
   const [savingKey, setSavingKey] = useState(null);
   const [sortField, setSortField] = useState('prazo');
   const [sortDir, setSortDir] = useState('asc');
-  const [filters, setFilters] = useState({ diagnostico: '', acao: '', responsavel: '', status: '', obs: '' });
+  const [filters, setFilters] = useState({
+    diagnostico: '',
+    acao: '',
+    obs: '',
+    reuniao: [],
+    responsavel: [],
+    prazo: [],
+    status: [],
+  });
 
   useEffect(() => {
     async function init() {
@@ -146,8 +154,22 @@ function PlanoAcaoPageInner() {
     return sortDir === 'asc' ? ' ▲' : ' ▼';
   }
 
-  function handleFilterChange(field, value) {
+  function handleTextFilterChange(field, value) {
     setFilters((f) => ({ ...f, [field]: value }));
+  }
+
+  function toggleMultiFilter(field, value) {
+    setFilters((f) => {
+      const current = f[field];
+      const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+      return { ...f, [field]: next };
+    });
+  }
+
+  function formatBR(iso) {
+    if (!iso) return '(vazio)';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
   }
 
   if (loading) return <div style={styles.loading}>Carregando...</div>;
@@ -156,21 +178,28 @@ function PlanoAcaoPageInner() {
     (a.companyName || '').localeCompare(b.companyName || '', 'pt-BR')
   );
 
+  function distinctValues(field) {
+    return [...new Set(items.map((it) => (it[field] || '').trim()).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b, 'pt-BR')
+    );
+  }
+
   // O menu de responsável é montado a partir dos nomes já usados na
   // própria planilha desse cliente (cada planilha tem seu próprio
   // conjunto -- ex.: Sofia/Rubens/Ambos/Rochelle numa, setores da empresa
   // em outra), em vez de uma lista fixa.
-  const responsavelOptions = [...new Set(items.map((it) => (it.responsavel || '').trim()).filter(Boolean))].sort(
-    (a, b) => a.localeCompare(b, 'pt-BR')
-  );
+  const responsavelOptions = distinctValues('responsavel');
+  const reuniaoOptions = distinctValues('reuniao');
+  const prazoOptions = distinctValues('prazo');
+  const statusOptions = [...new Set([...STATUS_OPTIONS, ...distinctValues('status')])];
 
   const COLUMNS = [
-    { field: 'reuniao', label: 'Reunião', filter: 'none' },
+    { field: 'reuniao', label: 'Reunião', filter: 'multiselect', options: reuniaoOptions, formatOption: formatBR },
     { field: 'diagnostico', label: 'Diagnóstico', filter: 'text' },
     { field: 'acao', label: 'Ação', filter: 'text' },
-    { field: 'responsavel', label: 'Responsável', filter: 'select', options: responsavelOptions },
-    { field: 'prazo', label: 'Prazo', filter: 'none' },
-    { field: 'status', label: 'Status', filter: 'select', options: STATUS_OPTIONS },
+    { field: 'responsavel', label: 'Responsável', filter: 'multiselect', options: responsavelOptions },
+    { field: 'prazo', label: 'Prazo', filter: 'multiselect', options: prazoOptions, formatOption: formatBR },
+    { field: 'status', label: 'Status', filter: 'multiselect', options: statusOptions },
     { field: 'obs', label: 'OBS', filter: 'text' },
   ];
 
@@ -189,12 +218,15 @@ function PlanoAcaoPageInner() {
   const visibleItems = items
     .filter((it) => {
       for (const col of COLUMNS) {
-        const filterValue = filters[col.field];
-        if (!filterValue) continue;
-        const itemValue = (it[col.field] || '').toString();
-        if (col.filter === 'select') {
-          if (itemValue !== filterValue) return false;
+        if (col.filter === 'multiselect') {
+          const selected = filters[col.field];
+          if (selected.length === 0) continue;
+          const itemValue = (it[col.field] || '').toString();
+          if (!selected.includes(itemValue)) return false;
         } else if (col.filter === 'text') {
+          const filterValue = filters[col.field];
+          if (!filterValue) continue;
+          const itemValue = (it[col.field] || '').toString();
           if (!itemValue.toLowerCase().includes(filterValue.toLowerCase())) return false;
         }
       }
@@ -254,23 +286,33 @@ function PlanoAcaoPageInner() {
                         <input
                           style={styles.headFilterInput}
                           value={filters[col.field]}
-                          onChange={(e) => handleFilterChange(col.field, e.target.value)}
+                          onChange={(e) => handleTextFilterChange(col.field, e.target.value)}
                           placeholder="Filtrar..."
                         />
                       )}
-                      {col.filter === 'select' && (
-                        <select
-                          style={styles.headFilterSelect}
-                          value={filters[col.field]}
-                          onChange={(e) => handleFilterChange(col.field, e.target.value)}
-                        >
-                          <option value="">Todos</option>
-                          {col.options.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
+                      {col.filter === 'multiselect' && (
+                        <details style={styles.filterDetails}>
+                          <summary style={styles.filterSummary}>
+                            {filters[col.field].length === 0
+                              ? 'Todos'
+                              : `${filters[col.field].length} selecionado${filters[col.field].length > 1 ? 's' : ''}`}
+                          </summary>
+                          <div style={styles.filterPanel}>
+                            {col.options.length === 0 && (
+                              <span style={styles.filterEmptyNote}>Sem valores</span>
+                            )}
+                            {col.options.map((opt) => (
+                              <label key={opt} style={styles.filterCheckboxRow}>
+                                <input
+                                  type="checkbox"
+                                  checked={filters[col.field].includes(opt)}
+                                  onChange={() => toggleMultiFilter(col.field, opt)}
+                                />
+                                <span>{col.formatOption ? col.formatOption(opt) : opt}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </details>
                       )}
                     </div>
                   ))}
@@ -429,7 +471,8 @@ const styles = {
     width: '100%',
     boxSizing: 'border-box',
   },
-  headFilterSelect: {
+  filterDetails: { position: 'relative', width: '100%' },
+  filterSummary: {
     border: '1px solid rgba(15,45,36,0.15)',
     borderRadius: 4,
     padding: '5px 7px',
@@ -438,9 +481,40 @@ const styles = {
     textTransform: 'none',
     fontFamily: 'Inter, sans-serif',
     background: '#fff',
+    color: '#0F2D24',
     width: '100%',
     boxSizing: 'border-box',
+    cursor: 'pointer',
+    listStyle: 'none',
   },
+  filterPanel: {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    left: 0,
+    zIndex: 20,
+    background: '#fff',
+    border: '1px solid rgba(15,45,36,0.15)',
+    borderRadius: 4,
+    padding: '8px 10px',
+    minWidth: 180,
+    maxHeight: 220,
+    overflowY: 'auto',
+    boxShadow: '0 6px 18px rgba(15,45,36,0.15)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  filterCheckboxRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    fontSize: '0.78rem',
+    fontWeight: 400,
+    textTransform: 'none',
+    color: '#0F2D24',
+    whiteSpace: 'nowrap',
+  },
+  filterEmptyNote: { fontSize: '0.75rem', color: 'rgba(15,45,36,0.5)', fontWeight: 400, textTransform: 'none' },
   tableRow: {
     display: 'grid',
     gridTemplateColumns: '110px 2fr 2fr 1fr 110px 130px 1.2fr',
