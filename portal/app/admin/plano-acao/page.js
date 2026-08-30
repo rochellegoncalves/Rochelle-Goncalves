@@ -88,10 +88,12 @@ function PlanoAcaoPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClientId]);
 
-  async function handleFieldChange(rowNumber, field, value) {
-    const key = `${rowNumber}-${field}`;
-    const previousItems = items;
+  function updateLocal(rowNumber, field, value) {
     setItems((its) => its.map((it) => (it.rowNumber === rowNumber ? { ...it, [field]: value } : it)));
+  }
+
+  async function commitField(rowNumber, field, value) {
+    const key = `${rowNumber}-${field}`;
     setSavingKey(key);
     setError('');
 
@@ -104,9 +106,28 @@ function PlanoAcaoPageInner() {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setError(`Erro ao salvar na planilha (${res.status}): ${JSON.stringify(body)}`);
-      setItems(previousItems);
+      setError(
+        `Erro ao salvar na planilha (${res.status}): ${JSON.stringify(body)}. Recarregue a página pra conferir o valor salvo.`
+      );
     }
+  }
+
+  // Data e status mudam com uma única ação (escolher no calendário/lista),
+  // então salvam na hora. Texto livre (Ação, Diagnóstico, Responsável) só
+  // salva quando o campo perde o foco, pra não mandar uma chamada por letra
+  // digitada.
+  function handleImmediateChange(rowNumber, field, value) {
+    updateLocal(rowNumber, field, value);
+    commitField(rowNumber, field, value);
+  }
+
+  function handleTextChange(rowNumber, field, value) {
+    updateLocal(rowNumber, field, value);
+  }
+
+  function handleTextBlur(rowNumber, field) {
+    const value = items.find((it) => it.rowNumber === rowNumber)?.[field] ?? '';
+    commitField(rowNumber, field, value);
   }
 
   if (loading) return <div style={styles.loading}>Carregando...</div>;
@@ -161,53 +182,96 @@ function PlanoAcaoPageInner() {
                 cliente e cole o link da planilha do Google Sheets dele.
               </p>
             ) : (
-              <div style={styles.tableWrap}>
-                <div style={styles.tableHeadRow}>
-                  <span>Ação</span>
-                  <span>Responsável</span>
-                  <span>Prazo</span>
-                  <span>Status</span>
-                </div>
+              <div>
                 {visibleItems.length === 0 && (
                   <p style={styles.emptyStateInline}>Nenhuma ação pendente por aqui.</p>
                 )}
                 {visibleItems.map((item) => (
-                  <div key={item.rowNumber} style={styles.tableRow}>
-                    <div style={styles.acaoCell}>
-                      <span style={styles.acaoText}>{item.acao}</span>
-                      {item.diagnostico && <span style={styles.diagnosticoText}>{item.diagnostico}</span>}
-                      {item.obs && <span style={styles.obsText}>Obs: {item.obs}</span>}
+                  <div key={item.rowNumber} style={styles.card}>
+                    <div style={styles.cardTopRow}>
+                      <div style={styles.field}>
+                        <label style={styles.fieldLabel}>Reunião</label>
+                        <input
+                          type="date"
+                          style={styles.dateInput}
+                          value={item.reuniao || ''}
+                          disabled={savingKey === `${item.rowNumber}-reuniao`}
+                          onChange={(e) => handleImmediateChange(item.rowNumber, 'reuniao', e.target.value)}
+                        />
+                      </div>
+                      <select
+                        style={{
+                          ...styles.statusSelect,
+                          ...(STATUS_STYLE[item.status] || {}),
+                          opacity: savingKey === `${item.rowNumber}-status` ? 0.5 : 1,
+                        }}
+                        value={item.status || ''}
+                        disabled={savingKey === `${item.rowNumber}-status`}
+                        onChange={(e) => handleImmediateChange(item.rowNumber, 'status', e.target.value)}
+                      >
+                        {!STATUS_OPTIONS.includes(item.status) && item.status && (
+                          <option value={item.status}>{item.status}</option>
+                        )}
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <span style={styles.responsavelText}>{item.responsavel || '—'}</span>
-                    <input
-                      type="date"
-                      style={{
-                        ...styles.dateInput,
-                        opacity: savingKey === `${item.rowNumber}-prazo` ? 0.5 : 1,
-                      }}
-                      value={item.prazo || ''}
-                      disabled={savingKey === `${item.rowNumber}-prazo`}
-                      onChange={(e) => handleFieldChange(item.rowNumber, 'prazo', e.target.value)}
-                    />
-                    <select
-                      style={{
-                        ...styles.statusSelect,
-                        ...(STATUS_STYLE[item.status] || {}),
-                        opacity: savingKey === `${item.rowNumber}-status` ? 0.5 : 1,
-                      }}
-                      value={item.status || ''}
-                      disabled={savingKey === `${item.rowNumber}-status`}
-                      onChange={(e) => handleFieldChange(item.rowNumber, 'status', e.target.value)}
-                    >
-                      {!STATUS_OPTIONS.includes(item.status) && item.status && (
-                        <option value={item.status}>{item.status}</option>
-                      )}
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
+
+                    <div style={styles.field}>
+                      <label style={styles.fieldLabel}>Ação</label>
+                      <textarea
+                        style={styles.acaoTextarea}
+                        value={item.acao}
+                        onChange={(e) => handleTextChange(item.rowNumber, 'acao', e.target.value)}
+                        onBlur={() => handleTextBlur(item.rowNumber, 'acao')}
+                        rows={2}
+                      />
+                    </div>
+
+                    <div style={styles.field}>
+                      <label style={styles.fieldLabel}>Diagnóstico</label>
+                      <textarea
+                        style={styles.diagnosticoTextarea}
+                        value={item.diagnostico}
+                        onChange={(e) => handleTextChange(item.rowNumber, 'diagnostico', e.target.value)}
+                        onBlur={() => handleTextBlur(item.rowNumber, 'diagnostico')}
+                        rows={2}
+                      />
+                    </div>
+
+                    <div style={styles.cardBottomRow}>
+                      <div style={styles.field}>
+                        <label style={styles.fieldLabel}>Responsável</label>
+                        <input
+                          style={styles.textInput}
+                          value={item.responsavel}
+                          onChange={(e) => handleTextChange(item.rowNumber, 'responsavel', e.target.value)}
+                          onBlur={() => handleTextBlur(item.rowNumber, 'responsavel')}
+                        />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.fieldLabel}>Prazo</label>
+                        <input
+                          type="date"
+                          style={styles.dateInput}
+                          value={item.prazo || ''}
+                          disabled={savingKey === `${item.rowNumber}-prazo`}
+                          onChange={(e) => handleImmediateChange(item.rowNumber, 'prazo', e.target.value)}
+                        />
+                      </div>
+                      <div style={{ ...styles.field, flex: 1 }}>
+                        <label style={styles.fieldLabel}>OBS</label>
+                        <input
+                          style={styles.textInput}
+                          value={item.obs}
+                          onChange={(e) => handleTextChange(item.rowNumber, 'obs', e.target.value)}
+                          onBlur={() => handleTextBlur(item.rowNumber, 'obs')}
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -237,33 +301,28 @@ const styles = {
     background: '#fff',
   },
   toggleLabel: { display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: '#3C4A38' },
-  tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
-  tableHeadRow: {
-    display: 'grid',
-    gridTemplateColumns: '3fr 1fr 1fr 1fr',
-    padding: '10px 20px',
-    fontSize: '0.68rem',
-    textTransform: 'uppercase',
+  emptyStateInline: {
+    padding: 20,
     color: '#3C4A38',
-    fontWeight: 700,
-    background: '#E6DCC2',
-    gap: 12,
+    margin: 0,
+    background: '#fff',
+    border: '1px solid rgba(15,45,36,0.08)',
+    borderRadius: 6,
   },
-  tableRow: {
-    display: 'grid',
-    gridTemplateColumns: '3fr 1fr 1fr 1fr',
-    padding: '12px 20px',
-    borderTop: '1px solid rgba(15,45,36,0.06)',
-    fontSize: '0.84rem',
-    gap: 12,
-    alignItems: 'start',
+  card: {
+    background: '#fff',
+    border: '1px solid rgba(15,45,36,0.08)',
+    borderRadius: 6,
+    padding: '16px 20px',
+    marginBottom: 14,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
   },
-  acaoCell: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 },
-  acaoText: { fontWeight: 600, color: '#0F2D24' },
-  diagnosticoText: { fontSize: '0.76rem', color: '#3C4A38', opacity: 0.75 },
-  obsText: { fontSize: '0.76rem', color: '#8a6d2f', fontStyle: 'italic' },
-  responsavelText: { color: '#3C4A38' },
-  emptyStateInline: { padding: 20, color: '#3C4A38', margin: 0 },
+  cardTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
+  cardBottomRow: { display: 'flex', gap: 14, flexWrap: 'wrap' },
+  field: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 120 },
+  fieldLabel: { fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: '#3C4A38', opacity: 0.65 },
   dateInput: {
     border: '1px solid rgba(15,45,36,0.15)',
     borderRadius: 4,
@@ -272,6 +331,41 @@ const styles = {
     fontFamily: 'Inter, sans-serif',
     background: '#fff',
   },
+  textInput: {
+    border: '1px solid rgba(15,45,36,0.15)',
+    borderRadius: 4,
+    padding: '6px 8px',
+    fontSize: '0.82rem',
+    fontFamily: 'Inter, sans-serif',
+    background: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  acaoTextarea: {
+    border: '1px solid rgba(15,45,36,0.15)',
+    borderRadius: 4,
+    padding: '8px 10px',
+    fontSize: '0.86rem',
+    fontFamily: 'Inter, sans-serif',
+    fontWeight: 600,
+    color: '#0F2D24',
+    background: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
+    resize: 'vertical',
+  },
+  diagnosticoTextarea: {
+    border: '1px solid rgba(15,45,36,0.12)',
+    borderRadius: 4,
+    padding: '8px 10px',
+    fontSize: '0.8rem',
+    fontFamily: 'Inter, sans-serif',
+    color: '#3C4A38',
+    background: '#F7F5F0',
+    width: '100%',
+    boxSizing: 'border-box',
+    resize: 'vertical',
+  },
   statusSelect: {
     border: '1px solid rgba(15,45,36,0.15)',
     borderRadius: 30,
@@ -279,5 +373,6 @@ const styles = {
     fontSize: '0.76rem',
     fontWeight: 700,
     fontFamily: 'Inter, sans-serif',
+    height: 34,
   },
 };
