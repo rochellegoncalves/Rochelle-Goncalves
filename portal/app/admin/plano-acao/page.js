@@ -132,6 +132,10 @@ function PlanoAcaoPageInner() {
 
   if (loading) return <div style={styles.loading}>Carregando...</div>;
 
+  const sortedClients = [...clients].sort((a, b) =>
+    (a.companyName || '').localeCompare(b.companyName || '', 'pt-BR')
+  );
+
   const sortedItems = [...items].sort((a, b) => {
     if (!a.prazo && !b.prazo) return 0;
     if (!a.prazo) return 1;
@@ -140,6 +144,20 @@ function PlanoAcaoPageInner() {
   });
   const visibleItems = showDone ? sortedItems : sortedItems.filter((it) => it.status !== 'Concluído');
   const doneCount = sortedItems.length - visibleItems.length;
+
+  // O menu de responsável é montado a partir dos nomes já usados na
+  // própria planilha desse cliente (cada planilha tem seu próprio
+  // conjunto -- ex.: Sofia/Rubens/Ambos/Rochelle numa, setores da empresa
+  // em outra), em vez de uma lista fixa.
+  const responsavelOptions = [...new Set(items.map((it) => (it.responsavel || '').trim()).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b, 'pt-BR')
+  );
+
+  function autoResize(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }
 
   return (
     <div style={styles.page}>
@@ -161,7 +179,7 @@ function PlanoAcaoPageInner() {
                 value={selectedClientId}
                 onChange={(e) => setSelectedClientId(e.target.value)}
               >
-                {clients.map((c) => (
+                {sortedClients.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.companyName}
                   </option>
@@ -205,25 +223,46 @@ function PlanoAcaoPageInner() {
                       onChange={(e) => handleImmediateChange(item.rowNumber, 'reuniao', e.target.value)}
                     />
                     <textarea
+                      ref={autoResize}
                       style={styles.acaoTextarea}
                       value={item.acao}
-                      onChange={(e) => handleTextChange(item.rowNumber, 'acao', e.target.value)}
+                      onChange={(e) => {
+                        handleTextChange(item.rowNumber, 'acao', e.target.value);
+                        autoResize(e.target);
+                      }}
                       onBlur={() => handleTextBlur(item.rowNumber, 'acao')}
-                      rows={3}
+                      rows={2}
                     />
                     <textarea
+                      ref={autoResize}
                       style={styles.diagnosticoTextarea}
                       value={item.diagnostico}
-                      onChange={(e) => handleTextChange(item.rowNumber, 'diagnostico', e.target.value)}
+                      onChange={(e) => {
+                        handleTextChange(item.rowNumber, 'diagnostico', e.target.value);
+                        autoResize(e.target);
+                      }}
                       onBlur={() => handleTextBlur(item.rowNumber, 'diagnostico')}
-                      rows={3}
+                      rows={2}
                     />
-                    <input
-                      style={styles.textInput}
-                      value={item.responsavel}
-                      onChange={(e) => handleTextChange(item.rowNumber, 'responsavel', e.target.value)}
-                      onBlur={() => handleTextBlur(item.rowNumber, 'responsavel')}
-                    />
+                    <select
+                      style={{
+                        ...styles.statusSelect,
+                        opacity: savingKey === `${item.rowNumber}-responsavel` ? 0.5 : 1,
+                      }}
+                      value={item.responsavel || ''}
+                      disabled={savingKey === `${item.rowNumber}-responsavel`}
+                      onChange={(e) => handleImmediateChange(item.rowNumber, 'responsavel', e.target.value)}
+                    >
+                      <option value="">—</option>
+                      {!responsavelOptions.includes((item.responsavel || '').trim()) && item.responsavel && (
+                        <option value={item.responsavel}>{item.responsavel}</option>
+                      )}
+                      {responsavelOptions.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       type="date"
                       style={styles.dateInput}

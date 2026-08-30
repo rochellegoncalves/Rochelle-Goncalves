@@ -4,14 +4,19 @@ import { createAdminClient } from '../../../../lib/supabaseAdmin';
 import { getSheetsClient, extractSpreadsheetId } from '../../../../lib/googleSheets';
 
 const SHEET_TAB = 'Ações';
-const FIELD_COLUMN = {
-  reuniao: 'B',
-  diagnostico: 'C',
-  acao: 'D',
-  prazo: 'E',
-  responsavel: 'F',
-  status: 'G',
-  obs: 'H',
+
+// Nomes exatos das colunas de cabeçalho na planilha. Cada cliente pode ter
+// as colunas em posições diferentes (algumas planilhas têm uma coluna A
+// vazia antes de "Reunião", outras não), então detectamos a posição de
+// cada campo pelo texto do cabeçalho em vez de assumir uma letra fixa.
+const HEADER_NAMES = {
+  reuniao: 'Reunião',
+  diagnostico: 'Diagnóstico',
+  acao: 'Ação',
+  prazo: 'Prazo',
+  responsavel: 'Responsável',
+  status: 'Status',
+  obs: 'OBS',
 };
 
 function parseDateBRtoISO(str) {
@@ -28,8 +33,38 @@ function formatDateISOtoBR(iso) {
   return `${d}/${m}/${y}`;
 }
 
-function findHeaderRowIndex(rows) {
-  return rows.findIndex((r) => (r[3] || '').trim() === 'Ação' && (r[1] || '').trim() === 'Reunião');
+function getCell(row, index) {
+  if (index == null || index === -1) return '';
+  return row[index] || '';
+}
+
+function columnIndexToLetter(index) {
+  let letter = '';
+  let n = index;
+  while (n >= 0) {
+    letter = String.fromCharCode((n % 26) + 65) + letter;
+    n = Math.floor(n / 26) - 1;
+  }
+  return letter;
+}
+
+// Acha a linha de cabeçalho procurando "Reunião" e "Ação" em qualquer
+// coluna, e devolve o índice de cada campo dentro dessa linha.
+function findHeader(rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const indexOf = (name) => row.findIndex((cell) => (cell || '').trim() === name);
+    const acaoIdx = indexOf(HEADER_NAMES.acao);
+    const reuniaoIdx = indexOf(HEADER_NAMES.reuniao);
+    if (acaoIdx !== -1 && reuniaoIdx !== -1) {
+      const columns = {};
+      for (const [field, label] of Object.entries(HEADER_NAMES)) {
+        columns[field] = indexOf(label);
+      }
+      return { rowIndex: i, columns };
+    }
+  }
+  return null;
 }
 
 async function getClientSheetUrl(admin, clientId) {
@@ -70,7 +105,7 @@ export async function GET(request) {
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${SHEET_TAB}!A1:H1000`,
+      range: `${SHEET_TAB}!A1:Z1000`,
     });
     rows = res.data.values || [];
   } catch (e) {
@@ -80,28 +115,29 @@ export async function GET(request) {
     );
   }
 
-  const headerIdx = findHeaderRowIndex(rows);
-  if (headerIdx === -1) {
+  const header = findHeader(rows);
+  if (!header) {
     return NextResponse.json(
       { error: 'header_not_found', note: `Não encontrei a linha de cabeçalho com "Reunião"/"Ação" na aba "${SHEET_TAB}".` },
       { status: 422 }
     );
   }
 
+  const { columns } = header;
   const items = [];
-  for (let i = headerIdx + 1; i < rows.length; i++) {
+  for (let i = header.rowIndex + 1; i < rows.length; i++) {
     const r = rows[i];
-    const acao = (r[3] || '').trim();
+    const acao = getCell(r, columns.acao).trim();
     if (!acao) continue;
     items.push({
       rowNumber: i + 1,
-      reuniao: parseDateBRtoISO(r[1]),
-      diagnostico: r[2] || '',
+      reuniao: parseDateBRtoISO(getCell(r, columns.reuniao)),
+      diagnostico: getCell(r, columns.diagnostico),
       acao,
-      prazo: parseDateBRtoISO(r[4]),
-      responsavel: r[5] || '',
-      status: r[6] || '',
-      obs: r[7] || '',
+      prazo: parseDateBRtoISO(getCell(r, columns.prazo)),
+      responsavel: getCell(r, columns.responsavel),
+      status: getCell(r, columns.status),
+      obs: getCell(r, columns.obs),
     });
   }
 
@@ -117,8 +153,7 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'missing_fields' }, { status: 400 });
   }
 
-  const column = FIELD_COLUMN[field];
-  if (!column) {
+  if (!HEADER_NAMES[field]) {
     return NextResponse.json({ error: 'invalid_field' }, { status: 400 });
   }
 
@@ -135,6 +170,26 @@ export async function PATCH(request) {
 
   const spreadsheetId = extractSpreadsheetId(sheetUrl);
   const sheets = getSheetsClient();
+
+  let rows;
+  try {
+    const headerRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${SHEET_TAB}!A1:Z1000`,
+    });
+    rows = headerRes.data.values || [];
+  } catch (e) {
+    return NextResponse.json({ error: 'google_sheets_error', message: e.message }, { status: 502 });
+  }
+
+  const header = findHeader(rows);
+  if (!header || header.columns[field] === -1) {
+    return NextResponse.json(
+      { error: 'header_not_found', note: `Não encontrei a coluna "${HEADER_NAMES[field]}" na aba "${SHEET_TAB}".` },
+      { status: 422 }
+    );
+  }
+  const column = columnIndexToLetter(header.columns[field]);
 
   const cellValue = field === 'prazo' || field === 'reuniao' ? formatDateISOtoBR(value) : value || '';
 
