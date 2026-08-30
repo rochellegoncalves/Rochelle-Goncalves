@@ -45,6 +45,7 @@ export default function ClientesPage() {
   const [viewingId, setViewingId] = useState(null);
   const [sendingSignature, setSendingSignature] = useState(false);
   const [signatureResult, setSignatureResult] = useState(null);
+  const [impersonating, setImpersonating] = useState(false);
   const [sortField, setSortField] = useState('companyName');
   const [sortDir, setSortDir] = useState('asc');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -163,6 +164,29 @@ export default function ClientesPage() {
       return;
     }
     setSignatureResult(body);
+  }
+
+  async function handleImpersonate(client) {
+    if (
+      !window.confirm(
+        `Vai abrir uma nova aba já logada como "${client.companyName}". Use uma aba anônima/privada pra não misturar com sua sessão de admin nesse navegador. Continuar?`
+      )
+    )
+      return;
+    setImpersonating(true);
+    setError('');
+    const res = await fetch('/api/admin/clients/impersonate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: client.id }),
+    });
+    const body = await res.json().catch(() => ({}));
+    setImpersonating(false);
+    if (!res.ok) {
+      setError(`Erro ao gerar acesso (${res.status}): ${JSON.stringify(body)}`);
+      return;
+    }
+    window.open(body.link, '_blank', 'noopener');
   }
 
   async function handleDelete(client) {
@@ -440,6 +464,14 @@ export default function ClientesPage() {
                     Ver contrato assinado
                   </a>
                 )}
+                <button
+                  type="button"
+                  style={styles.cancelButton}
+                  disabled={impersonating}
+                  onClick={() => handleImpersonate(viewingClient)}
+                >
+                  {impersonating ? 'Gerando acesso...' : 'Ver como o cliente vê'}
+                </button>
                 <button style={styles.cancelButton} onClick={() => startEdit(viewingClient)}>
                   Editar
                 </button>
