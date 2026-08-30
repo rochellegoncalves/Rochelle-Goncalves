@@ -45,6 +45,9 @@ export default function ClientesPage() {
   const [viewingId, setViewingId] = useState(null);
   const [sendingSignature, setSendingSignature] = useState(false);
   const [signatureResult, setSignatureResult] = useState(null);
+  const [sortField, setSortField] = useState('companyName');
+  const [sortDir, setSortDir] = useState('asc');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   async function loadClients() {
     const res = await fetch('/api/admin/clients');
@@ -178,9 +181,47 @@ export default function ClientesPage() {
     await loadClients();
   }
 
+  function handleSort(field) {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  }
+
+  function sortArrow(field) {
+    if (sortField !== field) return '';
+    return sortDir === 'asc' ? ' ▲' : ' ▼';
+  }
+
   if (loading) return <div style={styles.loading}>Carregando...</div>;
 
   const viewingClient = clients.find((c) => c.id === viewingId) || null;
+
+  const visibleClients = clients
+    .filter((c) => {
+      if (statusFilter === 'active') return c.active;
+      if (statusFilter === 'inactive') return !c.active;
+      return true;
+    })
+    .sort((a, b) => {
+      let av;
+      let bv;
+      if (sortField === 'companyName') {
+        av = (a.companyName || '').toLowerCase();
+        bv = (b.companyName || '').toLowerCase();
+      } else if (sortField === 'contractStartDate') {
+        av = a.contractStartDate || '';
+        bv = b.contractStartDate || '';
+      } else if (sortField === 'monthlyValue') {
+        av = a.monthlyValue ?? -Infinity;
+        bv = b.monthlyValue ?? -Infinity;
+      }
+      if (av < bv) return sortDir === 'asc' ? -1 : 1;
+      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   return (
     <div style={styles.page}>
@@ -463,16 +504,38 @@ export default function ClientesPage() {
           </div>
         )}
 
+        <div style={styles.tableControls}>
+          <div style={styles.field}>
+            <label style={styles.label}>Filtrar por status</label>
+            <select
+              style={styles.input}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+            </select>
+          </div>
+        </div>
+
         <div style={styles.tableWrap}>
           <div style={styles.tableHeadRow}>
-            <span>Empresa</span>
-            <span>Valor mensal</span>
+            <span style={styles.sortableHead} onClick={() => handleSort('companyName')}>
+              Empresa{sortArrow('companyName')}
+            </span>
+            <span style={styles.sortableHead} onClick={() => handleSort('contractStartDate')}>
+              Início{sortArrow('contractStartDate')}
+            </span>
+            <span style={styles.sortableHead} onClick={() => handleSort('monthlyValue')}>
+              Valor mensal{sortArrow('monthlyValue')}
+            </span>
             <span style={styles.centerHeadCell}>Documentos</span>
             <span>Status</span>
             <span></span>
           </div>
-          {clients.length === 0 && <p style={styles.emptyState}>Nenhum cliente cadastrado ainda.</p>}
-          {clients.map((c) => (
+          {visibleClients.length === 0 && <p style={styles.emptyState}>Nenhum cliente encontrado.</p>}
+          {visibleClients.map((c) => (
             <div key={c.id} style={styles.tableRow}>
               <span
                 style={styles.clickableCell}
@@ -488,6 +551,7 @@ export default function ClientesPage() {
                   {c.cpfCnpj || 'CPF/CNPJ não cadastrado'}
                 </span>
               </span>
+              <span>{formatDate(c.contractStartDate)}</span>
               <span>{formatMoney(c.monthlyValue)}</span>
               <button
                 style={styles.documentCountButton}
@@ -585,10 +649,11 @@ const styles = {
     fontSize: '0.8rem',
     height: 38,
   },
+  tableControls: { display: 'flex', gap: 14, marginBottom: 12, alignItems: 'end' },
   tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
   tableHeadRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr 170px',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 170px',
     padding: '10px 20px',
     fontSize: '0.68rem',
     textTransform: 'uppercase',
@@ -597,9 +662,10 @@ const styles = {
     background: '#E6DCC2',
     alignItems: 'center',
   },
+  sortableHead: { cursor: 'pointer', userSelect: 'none' },
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr 170px',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 170px',
     padding: '11px 20px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
     fontSize: '0.84rem',
