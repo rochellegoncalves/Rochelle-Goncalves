@@ -30,7 +30,9 @@ function PlanoAcaoPageInner() {
   const [error, setError] = useState('');
   const [sheetNotConfigured, setSheetNotConfigured] = useState(false);
   const [savingKey, setSavingKey] = useState(null);
-  const [showDone, setShowDone] = useState(false);
+  const [sortField, setSortField] = useState('prazo');
+  const [sortDir, setSortDir] = useState('asc');
+  const [filters, setFilters] = useState({ diagnostico: '', acao: '', responsavel: '', status: '', obs: '' });
 
   useEffect(() => {
     async function init() {
@@ -130,20 +132,29 @@ function PlanoAcaoPageInner() {
     commitField(rowNumber, field, value);
   }
 
+  function handleSort(field) {
+    if (sortField === field) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  }
+
+  function sortArrow(field) {
+    if (sortField !== field) return '';
+    return sortDir === 'asc' ? ' ▲' : ' ▼';
+  }
+
+  function handleFilterChange(field, value) {
+    setFilters((f) => ({ ...f, [field]: value }));
+  }
+
   if (loading) return <div style={styles.loading}>Carregando...</div>;
 
   const sortedClients = [...clients].sort((a, b) =>
     (a.companyName || '').localeCompare(b.companyName || '', 'pt-BR')
   );
-
-  const sortedItems = [...items].sort((a, b) => {
-    if (!a.prazo && !b.prazo) return 0;
-    if (!a.prazo) return 1;
-    if (!b.prazo) return -1;
-    return a.prazo.localeCompare(b.prazo);
-  });
-  const visibleItems = showDone ? sortedItems : sortedItems.filter((it) => it.status !== 'Concluído');
-  const doneCount = sortedItems.length - visibleItems.length;
 
   // O menu de responsável é montado a partir dos nomes já usados na
   // própria planilha desse cliente (cada planilha tem seu próprio
@@ -152,6 +163,44 @@ function PlanoAcaoPageInner() {
   const responsavelOptions = [...new Set(items.map((it) => (it.responsavel || '').trim()).filter(Boolean))].sort(
     (a, b) => a.localeCompare(b, 'pt-BR')
   );
+
+  const COLUMNS = [
+    { field: 'reuniao', label: 'Reunião', filter: 'none' },
+    { field: 'diagnostico', label: 'Diagnóstico', filter: 'text' },
+    { field: 'acao', label: 'Ação', filter: 'text' },
+    { field: 'responsavel', label: 'Responsável', filter: 'select', options: responsavelOptions },
+    { field: 'prazo', label: 'Prazo', filter: 'none' },
+    { field: 'status', label: 'Status', filter: 'select', options: STATUS_OPTIONS },
+    { field: 'obs', label: 'OBS', filter: 'text' },
+  ];
+
+  function compareItems(a, b, field, dir) {
+    const av = a[field] ?? '';
+    const bv = b[field] ?? '';
+    const aEmpty = av === '';
+    const bEmpty = bv === '';
+    if (aEmpty && bEmpty) return 0;
+    if (aEmpty) return 1;
+    if (bEmpty) return -1;
+    const cmp = av.localeCompare(bv, 'pt-BR');
+    return dir === 'asc' ? cmp : -cmp;
+  }
+
+  const visibleItems = items
+    .filter((it) => {
+      for (const col of COLUMNS) {
+        const filterValue = filters[col.field];
+        if (!filterValue) continue;
+        const itemValue = (it[col.field] || '').toString();
+        if (col.filter === 'select') {
+          if (itemValue !== filterValue) return false;
+        } else if (col.filter === 'text') {
+          if (!itemValue.toLowerCase().includes(filterValue.toLowerCase())) return false;
+        }
+      }
+      return true;
+    })
+    .sort((a, b) => compareItems(a, b, sortField, sortDir));
 
   function autoResize(el) {
     if (!el) return;
@@ -185,13 +234,6 @@ function PlanoAcaoPageInner() {
                   </option>
                 ))}
               </select>
-
-              {!sheetNotConfigured && (
-                <label style={styles.toggleLabel}>
-                  <input type="checkbox" checked={showDone} onChange={(e) => setShowDone(e.target.checked)} />
-                  Mostrar concluídas {doneCount > 0 ? `(${doneCount})` : ''}
-                </label>
-              )}
             </div>
 
             {sheetNotConfigured ? (
@@ -202,13 +244,36 @@ function PlanoAcaoPageInner() {
             ) : (
               <div style={styles.tableWrap}>
                 <div style={styles.tableHeadRow}>
-                  <span>Reunião</span>
-                  <span>Diagnóstico</span>
-                  <span>Ação</span>
-                  <span>Responsável</span>
-                  <span>Prazo</span>
-                  <span>Status</span>
-                  <span>OBS</span>
+                  {COLUMNS.map((col) => (
+                    <div key={col.field} style={styles.headCell}>
+                      <span style={styles.sortableHead} onClick={() => handleSort(col.field)}>
+                        {col.label}
+                        {sortArrow(col.field)}
+                      </span>
+                      {col.filter === 'text' && (
+                        <input
+                          style={styles.headFilterInput}
+                          value={filters[col.field]}
+                          onChange={(e) => handleFilterChange(col.field, e.target.value)}
+                          placeholder="Filtrar..."
+                        />
+                      )}
+                      {col.filter === 'select' && (
+                        <select
+                          style={styles.headFilterSelect}
+                          value={filters[col.field]}
+                          onChange={(e) => handleFilterChange(col.field, e.target.value)}
+                        >
+                          <option value="">Todos</option>
+                          {col.options.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  ))}
                 </div>
                 {visibleItems.length === 0 && (
                   <p style={styles.emptyStateInline}>Nenhuma ação pendente por aqui.</p>
@@ -323,7 +388,6 @@ const styles = {
     minWidth: 260,
     background: '#fff',
   },
-  toggleLabel: { display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', color: '#3C4A38' },
   emptyStateInline: {
     padding: 20,
     color: '#3C4A38',
@@ -349,6 +413,33 @@ const styles = {
     background: '#E6DCC2',
     gap: 10,
     minWidth: 1000,
+    alignItems: 'start',
+  },
+  headCell: { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 },
+  sortableHead: { cursor: 'pointer', userSelect: 'none' },
+  headFilterInput: {
+    border: '1px solid rgba(15,45,36,0.15)',
+    borderRadius: 4,
+    padding: '5px 7px',
+    fontSize: '0.72rem',
+    fontWeight: 400,
+    textTransform: 'none',
+    fontFamily: 'Inter, sans-serif',
+    background: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  headFilterSelect: {
+    border: '1px solid rgba(15,45,36,0.15)',
+    borderRadius: 4,
+    padding: '5px 7px',
+    fontSize: '0.72rem',
+    fontWeight: 400,
+    textTransform: 'none',
+    fontFamily: 'Inter, sans-serif',
+    background: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   tableRow: {
     display: 'grid',
