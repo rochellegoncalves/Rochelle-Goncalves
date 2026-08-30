@@ -1,12 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '../../../lib/supabaseClient';
 import AdminSidebar from '../../../components/AdminSidebar';
 
 export default function DocumentosPage() {
+  return (
+    <Suspense fallback={<div style={styles.loading}>Carregando...</div>}>
+      <DocumentosPageInner />
+    </Suspense>
+  );
+}
+
+function DocumentosPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -34,10 +43,16 @@ export default function DocumentosPage() {
       }
       const data = await res.json();
       setClients(data.clients || []);
-      if (data.clients?.length) setSelectedClientId(data.clients[0].id);
+      const requestedId = searchParams.get('clientId');
+      const initialId =
+        requestedId && data.clients?.some((c) => c.id === requestedId)
+          ? requestedId
+          : data.clients?.[0]?.id;
+      if (initialId) setSelectedClientId(initialId);
       setLoading(false);
     }
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   async function loadDocuments(clientId) {

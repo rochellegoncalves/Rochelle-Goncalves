@@ -427,6 +427,7 @@ export default function ClientesPage() {
           <div style={styles.tableHeadRow}>
             <span>Empresa</span>
             <span>Valor mensal</span>
+            <span style={styles.centerHeadCell}>Documentos</span>
             <span>Status</span>
             <span></span>
           </div>
@@ -448,6 +449,13 @@ export default function ClientesPage() {
                 </span>
               </span>
               <span>{formatMoney(c.monthlyValue)}</span>
+              <button
+                style={styles.documentCountButton}
+                onClick={() => router.push(`/admin/documentos?clientId=${c.id}`)}
+                title="Ver documentos deste cliente"
+              >
+                {c.documentCount}
+              </button>
               <button
                 style={c.active ? styles.statusActive : styles.statusInactive}
                 onClick={() => handleToggleActive(c)}
@@ -540,7 +548,7 @@ const styles = {
   tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
   tableHeadRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
     padding: '12px 20px',
     fontSize: '0.72rem',
     textTransform: 'uppercase',
@@ -551,7 +559,7 @@ const styles = {
   },
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
     padding: '14px 20px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
     fontSize: '0.88rem',
@@ -607,6 +615,19 @@ const styles = {
     fontSize: '0.78rem',
     fontWeight: 600,
     cursor: 'pointer',
+  },
+  centerHeadCell: { textAlign: 'center' },
+  documentCountButton: {
+    background: 'none',
+    border: '1px solid rgba(15,45,36,0.15)',
+    color: '#0F2D24',
+    width: 34,
+    height: 28,
+    borderRadius: 30,
+    fontSize: '0.82rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+    justifySelf: 'center',
   },
   statusActive: {
     background: 'rgba(139,165,143,0.18)',
