@@ -31,6 +31,12 @@ mutation CreateDocumentMutation(
 }
 `;
 
+const SIGN_DOCUMENT_MUTATION = `
+mutation SignDocumentMutation($id: UUID!) {
+  signDocument(id: $id)
+}
+`;
+
 // Manda o PDF do contrato pro Autentique pra coleta de assinatura
 // eletrônica, guarda o PDF (ainda não assinado) na área do cliente, e
 // registra o id do documento no Autentique nessa mesma linha -- é assim
@@ -89,10 +95,16 @@ export async function POST(request) {
     contractStartDate: client.contract_start_date,
   });
 
+  const ownerEmail = process.env.AUTENTIQUE_OWNER_EMAIL;
+  const signers = [{ email: signerEmail, action: 'SIGN', name: signerName }];
+  if (ownerEmail) {
+    signers.push({ email: ownerEmail, action: 'SIGN', name: 'Rochelle Gonçalves' });
+  }
+
   const variables = {
     sandbox: false,
     document: { name: `Contrato - ${client.company_name}`.slice(0, 199) },
-    signers: [{ email: signerEmail, action: 'SIGN', name: signerName }],
+    signers,
     file: null,
   };
 
@@ -118,6 +130,19 @@ export async function POST(request) {
 
   const doc = result?.data?.createDocument;
 
+  let ownerSignError = null;
+  if (ownerEmail && doc?.id) {
+    const signRes = await fetch(AUTENTIQUE_ENDPOINT, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: SIGN_DOCUMENT_MUTATION, variables: { id: doc.id } }),
+    });
+    const signResult = await signRes.json().catch(() => null);
+    if (!signRes.ok || signResult?.errors) {
+      ownerSignError = signResult?.errors || signResult;
+    }
+  }
+
   const filePath = `${clientId}/contrato-enviado-${Date.now()}.pdf`;
   const { error: uploadError } = await admin.storage
     .from('documents')
@@ -139,5 +164,7 @@ export async function POST(request) {
     signerName,
     signerEmail,
     signatures: doc?.signatures || [],
+    ownerAutoSigned: !!ownerEmail && !ownerSignError,
+    ownerSignError,
   });
 }

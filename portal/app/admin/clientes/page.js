@@ -400,6 +400,16 @@ export default function ClientesPage() {
                   Enviado para assinatura de <strong>{signatureResult.signerName}</strong> (
                   {signatureResult.signerEmail}). Documento no Autentique: {signatureResult.documentId}.
                 </p>
+                {signatureResult.ownerAutoSigned && (
+                  <p style={{ margin: '0 0 4px', color: '#4c6350', fontWeight: 600 }}>
+                    Sua assinatura já foi aplicada automaticamente.
+                  </p>
+                )}
+                {signatureResult.ownerSignError && (
+                  <p style={{ margin: '0 0 4px', color: '#c8493a' }}>
+                    Não consegui aplicar sua assinatura automática: {JSON.stringify(signatureResult.ownerSignError)}
+                  </p>
+                )}
                 <p style={{ margin: 0, fontSize: '0.78rem', opacity: 0.85 }}>
                   Se o e-mail não chegar em alguns minutos: confira o spam, confira se esse documento
                   aparece em autentique.com.br com esse mesmo ID, e confira se o e-mail do administrador
