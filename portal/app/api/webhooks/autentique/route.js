@@ -4,7 +4,7 @@ import { createAdminClient } from '../../../../lib/supabaseAdmin';
 const AUTENTIQUE_ENDPOINT = 'https://api.autentique.com.br/v2/graphql';
 
 const DOCUMENT_QUERY = `
-query DocumentQuery($id: ID!) {
+query DocumentQuery($id: UUID!) {
   document(id: $id) {
     id
     files { signed }
