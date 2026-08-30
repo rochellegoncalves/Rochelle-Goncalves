@@ -68,6 +68,22 @@ create policy "Cliente baixa apenas os próprios arquivos"
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
+-- Timesheet: horas trabalhadas por cliente, via cronômetro em tempo
+-- real ou lançamento manual retroativo. ended_at nulo = cronômetro
+-- rodando nesse registro.
+create table if not exists public.time_entries (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.clients(id) on delete cascade,
+  description text,
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.time_entries enable row level security;
+-- Sem policy de leitura pro cliente -- só acessível via chave de
+-- serviço nas rotas /api/admin/timesheet.
+
 -- ------------------------------------------------------------------
 -- Como adicionar um cliente novo (por enquanto, manual, até termos o
 -- painel de administração pronto):
