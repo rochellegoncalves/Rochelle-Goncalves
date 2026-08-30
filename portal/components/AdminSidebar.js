@@ -9,8 +9,8 @@ const NAV_ITEMS = [
   { href: '/admin/clientes', label: 'Clientes', ready: true },
   { href: '/admin/documentos', label: 'Documentos', ready: true },
   { href: '/admin/plano-acao', label: 'Plano de Ação', ready: true },
+  { href: '/admin/rentabilidade', label: 'Rentabilidade', ready: true },
   { href: '#', label: 'Visão Geral (em breve)', ready: false },
-  { href: '#', label: 'Rentabilidade (em breve)', ready: false },
   { href: '#', label: 'Timesheet (em breve)', ready: false },
 ];
 
