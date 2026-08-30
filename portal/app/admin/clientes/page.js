@@ -20,6 +20,7 @@ const EMPTY_FORM = {
   adminProfession: '',
   monthlyValue: '',
   contractStartDate: '',
+  planoAcaoSheetUrl: '',
 };
 
 function formatMoney(value) {
@@ -91,6 +92,7 @@ export default function ClientesPage() {
       adminProfession: client.adminProfession || '',
       monthlyValue: client.monthlyValue ?? '',
       contractStartDate: client.contractStartDate || '',
+      planoAcaoSheetUrl: client.planoAcaoSheetUrl || '',
     });
   }
 
@@ -263,6 +265,15 @@ export default function ClientesPage() {
                   onChange={(e) => setForm({ ...form, contractStartDate: e.target.value })}
                 />
               </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Link da planilha de Plano de Ação</label>
+                <input
+                  style={styles.input}
+                  value={form.planoAcaoSheetUrl}
+                  onChange={(e) => setForm({ ...form, planoAcaoSheetUrl: e.target.value })}
+                  placeholder="https://docs.google.com/spreadsheets/d/..."
+                />
+              </div>
             </div>
 
             <h4 style={styles.sectionTitle}>
@@ -353,6 +364,15 @@ export default function ClientesPage() {
             <div style={styles.viewHeader}>
               <h3 style={styles.panelTitle}>{viewingClient.companyName}</h3>
               <div style={styles.formActions}>
+                {viewingClient.planoAcaoSheetUrl && (
+                  <button
+                    type="button"
+                    style={styles.cancelButton}
+                    onClick={() => router.push(`/admin/plano-acao?clientId=${viewingClient.id}`)}
+                  >
+                    Ver Plano de Ação
+                  </button>
+                )}
                 <a
                   style={styles.button}
                   href={`/api/admin/contract?clientId=${viewingClient.id}`}

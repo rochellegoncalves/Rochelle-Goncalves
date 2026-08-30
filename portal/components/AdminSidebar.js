@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: '/admin/tarefas', label: 'Minhas Tarefas', ready: true },
   { href: '/admin/clientes', label: 'Clientes', ready: true },
   { href: '/admin/documentos', label: 'Documentos', ready: true },
+  { href: '/admin/plano-acao', label: 'Plano de Ação', ready: true },
   { href: '#', label: 'Visão Geral (em breve)', ready: false },
   { href: '#', label: 'Rentabilidade (em breve)', ready: false },
   { href: '#', label: 'Timesheet (em breve)', ready: false },

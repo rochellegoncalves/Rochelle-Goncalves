@@ -3,7 +3,7 @@ import { requireOwner } from '../../../../lib/requireOwner';
 import { createAdminClient } from '../../../../lib/supabaseAdmin';
 
 const SELECT_FIELDS =
-  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, admin_nationality, admin_marital_status, admin_profession, monthly_value, contract_start_date, active, created_at, documents(id, category, created_at)';
+  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, admin_nationality, admin_marital_status, admin_profession, monthly_value, contract_start_date, active, plano_acao_sheet_url, created_at, documents(id, category, created_at)';
 
 function mapClient(c, email) {
   const docs = c.documents || [];
@@ -28,6 +28,7 @@ function mapClient(c, email) {
     monthlyValue: c.monthly_value,
     contractStartDate: c.contract_start_date,
     active: c.active,
+    planoAcaoSheetUrl: c.plano_acao_sheet_url,
     createdAt: c.created_at,
     documentCount: docs.length,
     signedContractDocumentId: signedContract?.id || null,
@@ -49,6 +50,7 @@ function fieldsFromBody(body) {
     admin_profession: body.adminProfession || null,
     monthly_value: body.monthlyValue ? Number(body.monthlyValue) : null,
     contract_start_date: body.contractStartDate || null,
+    plano_acao_sheet_url: body.planoAcaoSheetUrl || null,
   };
 }
 
