@@ -122,8 +122,7 @@ export default function TarefasPage() {
           </section>
         )}
 
-        <div style={styles.groupsGrid}>
-          {groups.map((group) => (
+        {groups.map((group) => (
             <section key={group.id} style={styles.stageBlock}>
               <div style={styles.stageHeader}>
                 <h3 style={styles.stageName}>{group.name}</h3>
@@ -158,8 +157,7 @@ export default function TarefasPage() {
                 </div>
               ))}
             </section>
-          ))}
-        </div>
+        ))}
       </main>
     </div>
   );
@@ -205,16 +203,11 @@ const styles = {
     borderRadius: 30,
     whiteSpace: 'nowrap',
   },
-  groupsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-    gap: 20,
-    alignItems: 'start',
-  },
   stageBlock: {
     background: '#fff',
     border: '1px solid rgba(15,45,36,0.08)',
     borderRadius: 6,
+    marginBottom: 18,
     overflow: 'hidden',
   },
   stageHeader: {
