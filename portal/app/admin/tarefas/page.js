@@ -19,6 +19,7 @@ export default function TarefasPage() {
   const [error, setError] = useState('');
   const [groups, setGroups] = useState([]);
   const [urgent, setUrgent] = useState([]);
+  const [savingTaskId, setSavingTaskId] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -47,6 +48,31 @@ export default function TarefasPage() {
     load();
   }, [router]);
 
+  async function handleDateChange(taskId, newDate) {
+    const previousGroups = groups;
+    setGroups((gs) =>
+      gs.map((g) => ({
+        ...g,
+        tasks: g.tasks.map((t) => (t.id === taskId ? { ...t, due: newDate || null } : t)),
+      }))
+    );
+    setSavingTaskId(taskId);
+    setError('');
+
+    const res = await fetch('/api/todoist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId, dueDate: newDate || null }),
+    });
+    setSavingTaskId(null);
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(`Erro ao salvar data no Todoist (${res.status}): ${JSON.stringify(body)}`);
+      setGroups(previousGroups);
+    }
+  }
+
   if (loading) {
     return <div style={styles.loading}>Carregando...</div>;
   }
@@ -57,73 +83,83 @@ export default function TarefasPage() {
 
       <main style={styles.main}>
         <h1 style={styles.h1}>Minhas Tarefas</h1>
-        <p style={styles.sub}>Puxado direto do seu projeto no Todoist.</p>
+        <p style={styles.sub}>
+          Puxado direto do seu projeto no Todoist. Mudar a data aqui já atualiza lá também.
+        </p>
 
         {error && <p style={styles.error}>{error}</p>}
 
         {urgent.length > 0 && (
           <section style={styles.urgentPanel}>
             <h2 style={styles.urgentTitle}>Tarefas de hoje e atrasadas</h2>
-            {urgent.map((t) => (
-              <div
-                key={t.id}
-                style={{
-                  ...styles.urgentRow,
-                  borderLeftColor: t.isOverdue ? '#d9584a' : '#C8A869',
-                }}
-              >
-                <div>
-                  <div style={styles.urgentTask}>{t.content}</div>
-                  <div style={styles.urgentMeta}>
-                    {t.groupName} · Prazo: {t.isOverdue ? formatDate(t.due) : 'hoje'}
-                  </div>
-                </div>
-                <span
+            <div style={styles.urgentGrid}>
+              {urgent.map((t) => (
+                <div
+                  key={t.id}
                   style={{
-                    ...styles.urgentFlag,
-                    color: t.isOverdue ? '#e8776a' : '#C8A869',
-                    background: t.isOverdue ? 'rgba(217,88,74,0.18)' : 'rgba(200,168,105,0.2)',
+                    ...styles.urgentRow,
+                    borderLeftColor: t.isOverdue ? '#d9584a' : '#C8A869',
                   }}
                 >
-                  {t.isOverdue ? 'Atrasada' : 'Vence hoje'}
-                </span>
-              </div>
-            ))}
+                  <div>
+                    <div style={styles.urgentTask}>{t.content}</div>
+                    <div style={styles.urgentMeta}>
+                      {t.groupName} · Prazo: {t.isOverdue ? formatDate(t.due) : 'hoje'}
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      ...styles.urgentFlag,
+                      color: t.isOverdue ? '#e8776a' : '#C8A869',
+                      background: t.isOverdue ? 'rgba(217,88,74,0.18)' : 'rgba(200,168,105,0.2)',
+                    }}
+                  >
+                    {t.isOverdue ? 'Atrasada' : 'Vence hoje'}
+                  </span>
+                </div>
+              ))}
+            </div>
           </section>
         )}
 
-        {groups.map((group) => (
-          <section key={group.id} style={styles.stageBlock}>
-            <div style={styles.stageHeader}>
-              <h3 style={styles.stageName}>{group.name}</h3>
-              <span style={styles.stageCount}>{group.tasks.length} tarefa(s)</span>
-            </div>
-            {group.tasks.length === 0 && (
-              <p style={styles.emptyState}>Nenhuma tarefa nesta área.</p>
-            )}
-            {group.tasks.map((task) => (
-              <div key={task.id} style={styles.taskRow}>
-                <span style={styles.taskName}>
-                  <span
-                    style={{
-                      ...styles.priorityDot,
-                      background: PRIORITY_COLOR[task.priority] || '#8ba58f',
-                    }}
-                  />
-                  {task.content}
-                </span>
-                <span
-                  style={{
-                    color: task.isOverdue ? '#d9584a' : task.isToday ? '#C8A869' : 'inherit',
-                    fontWeight: task.isOverdue || task.isToday ? 700 : 400,
-                  }}
-                >
-                  {task.due ? formatDate(task.due) : '—'}
-                </span>
+        <div style={styles.groupsGrid}>
+          {groups.map((group) => (
+            <section key={group.id} style={styles.stageBlock}>
+              <div style={styles.stageHeader}>
+                <h3 style={styles.stageName}>{group.name}</h3>
+                <span style={styles.stageCount}>{group.tasks.length} tarefa(s)</span>
               </div>
-            ))}
-          </section>
-        ))}
+              {group.tasks.length === 0 && (
+                <p style={styles.emptyState}>Nenhuma tarefa nesta área.</p>
+              )}
+              {group.tasks.map((task) => (
+                <div key={task.id} style={styles.taskRow}>
+                  <span style={styles.taskName}>
+                    <span
+                      style={{
+                        ...styles.priorityDot,
+                        background: PRIORITY_COLOR[task.priority] || '#8ba58f',
+                      }}
+                    />
+                    {task.content}
+                  </span>
+                  <input
+                    type="date"
+                    style={{
+                      ...styles.dateInput,
+                      color: task.isOverdue ? '#d9584a' : task.isToday ? '#C8A869' : '#3C4A38',
+                      fontWeight: task.isOverdue || task.isToday ? 700 : 400,
+                      opacity: savingTaskId === task.id ? 0.5 : 1,
+                    }}
+                    value={task.due || ''}
+                    disabled={savingTaskId === task.id}
+                    onChange={(e) => handleDateChange(task.id, e.target.value)}
+                  />
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>
       </main>
     </div>
   );
@@ -138,54 +174,76 @@ const styles = {
     justifyContent: 'center',
     color: '#3C4A38',
   },
-  main: { flex: 1, padding: '40px 48px', maxWidth: 1000 },
-  h1: { fontSize: '1.8rem', margin: '0 0 8px', fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
-  sub: { color: '#3C4A38', marginBottom: 32 },
-  error: { color: '#c8493a', marginBottom: 24 },
-  urgentPanel: { background: '#0F2D24', borderRadius: 8, padding: '24px 26px', marginBottom: 36 },
-  urgentTitle: { color: '#F7F5F0', fontSize: '1.05rem', marginBottom: 16, fontFamily: 'Playfair Display, serif' },
+  main: { flex: 1, padding: '36px 48px', maxWidth: 1440 },
+  h1: { fontSize: '1.6rem', margin: '0 0 6px', fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
+  sub: { color: '#3C4A38', marginBottom: 24, fontSize: '0.9rem' },
+  error: { color: '#c8493a', marginBottom: 18, fontSize: '0.9rem' },
+  urgentPanel: { background: '#0F2D24', borderRadius: 8, padding: '20px 22px', marginBottom: 28 },
+  urgentTitle: { color: '#F7F5F0', fontSize: '0.95rem', marginBottom: 14, fontFamily: 'Playfair Display, serif' },
+  urgentGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: 8,
+  },
   urgentRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '12px 16px',
+    padding: '10px 14px',
     background: 'rgba(247,245,240,0.06)',
     borderRadius: 6,
     borderLeft: '4px solid',
-    marginBottom: 8,
+    gap: 10,
   },
-  urgentTask: { color: '#F7F5F0', fontWeight: 600, fontSize: '0.9rem' },
-  urgentMeta: { color: 'rgba(247,245,240,0.6)', fontSize: '0.76rem', marginTop: 2 },
+  urgentTask: { color: '#F7F5F0', fontWeight: 600, fontSize: '0.84rem' },
+  urgentMeta: { color: 'rgba(247,245,240,0.6)', fontSize: '0.72rem', marginTop: 2 },
   urgentFlag: {
-    fontSize: '0.7rem',
+    fontSize: '0.66rem',
     fontWeight: 700,
     textTransform: 'uppercase',
     padding: '4px 10px',
     borderRadius: 30,
+    whiteSpace: 'nowrap',
+  },
+  groupsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+    gap: 20,
+    alignItems: 'start',
   },
   stageBlock: {
     background: '#fff',
     border: '1px solid rgba(15,45,36,0.08)',
     borderRadius: 6,
-    marginBottom: 20,
     overflow: 'hidden',
   },
   stageHeader: {
     display: 'flex',
     justifyContent: 'space-between',
-    padding: '14px 20px',
+    padding: '11px 18px',
     background: '#E6DCC2',
   },
-  stageName: { fontSize: '0.95rem', margin: 0, fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
-  stageCount: { fontSize: '0.78rem', color: '#3C4A38', fontWeight: 600 },
-  emptyState: { padding: '16px 20px', color: '#3C4A38', fontSize: '0.85rem', margin: 0 },
+  stageName: { fontSize: '0.86rem', margin: 0, fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
+  stageCount: { fontSize: '0.72rem', color: '#3C4A38', fontWeight: 600 },
+  emptyState: { padding: '14px 18px', color: '#3C4A38', fontSize: '0.8rem', margin: 0 },
   taskRow: {
     display: 'flex',
     justifyContent: 'space-between',
-    padding: '12px 20px',
+    alignItems: 'center',
+    padding: '9px 18px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
-    fontSize: '0.88rem',
+    fontSize: '0.82rem',
+    gap: 10,
   },
-  taskName: { display: 'flex', alignItems: 'center', fontWeight: 600 },
-  priorityDot: { width: 8, height: 8, borderRadius: '50%', marginRight: 10, flexShrink: 0 },
+  taskName: { display: 'flex', alignItems: 'center', fontWeight: 600, minWidth: 0 },
+  priorityDot: { width: 7, height: 7, borderRadius: '50%', marginRight: 9, flexShrink: 0 },
+  dateInput: {
+    border: '1px solid rgba(15,45,36,0.15)',
+    borderRadius: 4,
+    padding: '4px 6px',
+    fontSize: '0.78rem',
+    fontFamily: 'Inter, sans-serif',
+    background: '#fff',
+    flexShrink: 0,
+  },
 };

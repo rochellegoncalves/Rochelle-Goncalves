@@ -143,3 +143,44 @@ export async function GET() {
 
   return NextResponse.json({ groups, urgent });
 }
+
+// Muda a data de uma tarefa direto no Todoist -- a nossa tela só lê o
+// Todoist ao carregar, então a mudança feita lá também aparece aqui na
+// próxima vez que a página for recarregada (via de mão dupla).
+export async function POST(request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const ownerEmail = process.env.OWNER_EMAIL;
+  if (!user || !ownerEmail || user.email !== ownerEmail) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  const token = process.env.TODOIST_TOKEN;
+  if (!token) {
+    return NextResponse.json({ error: 'todoist_not_configured' }, { status: 500 });
+  }
+
+  const { taskId, dueDate } = await request.json();
+  if (!taskId) {
+    return NextResponse.json({ error: 'missing_task_id' }, { status: 400 });
+  }
+
+  const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(dueDate ? { due_date: dueDate } : { due_string: 'no date' }),
+  });
+
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    return NextResponse.json(
+      { error: 'todoist_api_error', status: res.status, body: bodyText.slice(0, 300) },
+      { status: 502 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
