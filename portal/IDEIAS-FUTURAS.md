@@ -1,98 +1,60 @@
-# Próximos passos e ideias futuras
+# Próximos passos (por prioridade)
 
-## Próximos passos (em ordem)
+Já feito: painel de administração (clientes + documentos), contrato
+preenchido automaticamente + assinatura eletrônica via Autentique + salvo
+sozinho em Documentos quando assinado. A partir daqui, ordem sugerida:
 
-0. **Testar subir um documento de cliente de verdade** -- usar o que já está
-   pronto (upload manual no Supabase Storage + linha na tabela `documents`)
-   pra confirmar que a Área do Cliente mostra e baixa o arquivo certinho.
-1. **Painel de administração básico** -- Rochelle conseguir adicionar
-   cliente e subir documento por uma tela própria, sem precisar mexer direto
-   no Supabase.
-2. **Plano de Ação via Google Sheets** -- sincronizar a planilha de plano de
+1. **Plano de Ação via Google Sheets** -- sincronizar a planilha de plano de
    ação de cada cliente (Tarefa, Responsável, Prazo, Status, Etapa) com a
-   tela de Plano de Ação do cliente, como já desenhado no mockup.
-3. **Resto do Painel do Negócio** -- rentabilidade por cliente, timesheet e
-   o cronômetro de horas, como já desenhado no mockup.
-4. **Domínio bonito pra Área do Cliente** -- hoje o botão "Área do Cliente"
+   tela de Plano de Ação do cliente, como já desenhado no mockup. Prioridade
+   máxima: é o coração do método dela e o que dá mais valor pro cliente ver
+   na área dele.
+
+2. **Domínio bonito pra Área do Cliente** -- hoje o botão "Área do Cliente"
    no site aponta pro endereço feio de preview do Vercel
    (rochelle-goncalves-git-claude-client-portal-rochelle1.vercel.app).
-   Configurar algo como `app.rochellegoncalves.com.br` (mesmo processo que
-   fizemos pro domínio principal: registro no Vercel + registro DNS no
-   Registro.br).
+   Configurar `app.rochellegoncalves.com.br` (mesmo processo do domínio
+   principal: registro no Vercel + DNS no Registro.br). Rápido de fazer e
+   todo cliente vê esse endereço, então sobe na lista.
 
-## Ideias para depois (backlog, sem ordem definida)
+3. **Resto do Painel do Negócio** -- rentabilidade por cliente, timesheet e
+   o cronômetro de horas, como já desenhado no mockup. Uso dela mesma pra
+   gerir o negócio.
 
-Coisas que a Rochelle pediu para anotar e construir mais pra frente (nenhuma
-delas está implementada ainda).
+4. **Botão "ver como o cliente vê"** -- clicar num cliente em
+   `/admin/clientes` e ver a tela exatamente como aquele cliente vê, sem
+   precisar logar com o e-mail dele. Faz mais sentido logo depois do Plano
+   de Ação existir, quando já há mais coisa pra conferir.
 
-### 1. Relacionamentos (planilha) como atividades em Minhas Tarefas
-Ela mantém uma planilha com relacionamentos/contatos. Trazer isso pra dentro
-de "Minhas Tarefas" como mais uma área/atividade, parecido com a sincronização
-com o Google Sheets já planejada para o Plano de Ação do cliente.
+5. **CRM (contatos + funil)** -- cadastro de contatos/leads com etapas
+   (Prospect -> Proposta -> Negociação -> Cliente) e histórico de notas por
+   contato. Pode reaproveitar/conversar com a tabela `clients` que já existe.
 
-### 2. Edição de data nas tarefas refletindo de volta no Todoist
-Hoje "Minhas Tarefas" só lê do Todoist (via GET /tasks). Ela quer poder mudar
-o prazo de uma tarefa direto na nossa tela e isso atualizar o Todoist de
-verdade (via POST/update na API do Todoist v1) -- ou seja, virar uma via de
-mão dupla, não só leitura.
+6. **Aba de processos jurídicos** -- ela ainda atua como advogada e conduz
+   processos judiciais. Nova área no Painel do Negócio pra acompanhar isso
+   (nome do processo, tribunal/vara, prazos, status -- definir campos exatos
+   com ela na hora de construir).
 
-### 3. Aba de processos jurídicos
-Ela ainda atua como advogada e conduz processos judiciais. Adicionar uma nova
-área/aba no Painel do Negócio pra acompanhar esses processos (provavelmente:
-nome do processo, tribunal/vara, prazos, status -- a definir com ela os
-campos exatos quando for construir).
+7. **Relacionamentos (planilha) como atividades em Minhas Tarefas** -- trazer
+   a planilha de relacionamentos/contatos pra dentro de "Minhas Tarefas" como
+   mais uma área, parecido com a sincronização do Plano de Ação.
 
-### 4. Base técnica dela como contexto
-Ela mencionou "alimentar" o assistente com a base técnica/conhecimento dela.
-Ainda não está claro se isso significa (a) dar mais contexto sobre a
-metodologia dela pra mim (Claude) usar em conversas futuras, ou (b) construir
-uma biblioteca de conhecimento dentro da própria plataforma (pra ela ou pros
-clientes). Perguntar pra ela qual das duas -- ou as duas -- antes de começar.
+8. **Edição de data nas tarefas refletindo no Todoist** -- hoje "Minhas
+   Tarefas" só lê do Todoist. Ela quer poder mudar o prazo direto na nossa
+   tela e isso atualizar o Todoist de verdade (via POST/update na API v1) --
+   virar via de mão dupla, não só leitura.
 
-### 5. CRM (contatos + funil)
-Cadastro de contatos/leads com etapas (Prospect -> Proposta -> Negociação ->
-Cliente) e histórico de notas/interações por contato. Provavelmente entra
-dentro do Painel do Negócio, e pode reaproveitar/conversar com a tabela
-`clients` que já existe.
+9. **Base técnica dela como contexto** -- ainda não está claro se significa
+   (a) dar mais contexto sobre a metodologia pra mim (Claude) usar em
+   conversas futuras, ou (b) construir uma biblioteca de conhecimento dentro
+   da própria plataforma (pra ela ou pros clientes). Perguntar qual das duas
+   -- ou as duas -- antes de começar; por isso fica mais pra frente.
 
-### 6. Contrato preenchido automaticamente + assinatura eletrônica
-Ela mandou o modelo real do contrato de consultoria. Status:
-1. ~~Gerar o PDF do contrato já preenchido com os dados do cliente~~ --
-   **feito**. Botão "Gerar contrato (PDF)" no painel de detalhes de cada
-   cliente (`/admin/clientes`) monta o PDF com as 20 cláusulas do modelo
-   real dela, já preenchido com os dados da empresa e do administrador, e
-   salva automaticamente como documento (categoria "Contrato") na área
-   daquele cliente.
-2. ~~Mandar esse PDF pra assinatura eletrônica~~ -- **feito**. Ela já usa o
-   Autentique, então integramos direto: botão "Enviar p/ assinatura
-   (Autentique)" no painel de detalhes do cliente manda o PDF pra API deles
-   (`AUTENTIQUE_TOKEN` configurado no Vercel), com o administrador do
-   cliente como signatário. O Autentique manda o e-mail de assinatura
-   automaticamente.
-3. ~~Guardar o contrato assinado (voltando do Autentique) como documento na
-   área do cliente~~ -- **feito**. Webhook (`/api/webhooks/autentique`)
-   configurado no Autentique avisa quando algo muda num documento; o
-   sistema confere se já foi assinado por todos e, se sim, baixa o PDF
-   assinado e substitui o documento automaticamente (categoria vira
-   "Contrato assinado"). Testado e funcionando de ponta a ponta.
-
-### 7. Botão "ver como o cliente vê" no cadastro do cliente
-Depois que a Área do Cliente tiver mais conteúdo de verdade (Plano de Ação,
-documentos, etc.), ela quer conseguir clicar num cliente em `/admin/clientes`
-e ver a tela exatamente como aquele cliente vê -- pra conferir se está tudo
-certo sem precisar logar com o e-mail dele. Passos prováveis: um botão
-"Ver área do cliente" no painel de detalhes do cliente que abre a Área do
-Cliente em modo leitura, usando as permissões da própria Rochelle (owner)
-mas filtrando os dados pelo `client_id` escolhido -- não precisa trocar de
-login. Construir só depois que a Área do Cliente tiver mais telas, pra não
-ficar revisando uma tela vazia.
-
-### 8. WhatsApp com histórico de mensagens dentro do CRM
-Ela quer ver as conversas de WhatsApp direto no CRM. Isso exige contratar
-acesso oficial à API do WhatsApp Business (Meta ou um intermediário tipo
-Twilio/Zenvia), passar pela verificação da Meta (pode levar dias/semanas),
-decidir um número de telefone dedicado, e aceitar custo por mensagem. Do
-lado da construção, precisa de uma central que recebe as mensagens em tempo
-real (webhook) e guarda no banco. Enquanto isso não sai do papel, dá pra
-colocar um botão simples "Abrir WhatsApp" (link direto, sem custo, sem
-aprovação) em cada contato do CRM.
+10. **WhatsApp com histórico de mensagens no CRM** -- exige contratar acesso
+    oficial à API do WhatsApp Business (Meta ou intermediário tipo
+    Twilio/Zenvia), passar pela verificação da Meta (dias/semanas), número
+    dedicado, custo por mensagem, e uma central que recebe mensagens em
+    tempo real (webhook). Maior custo/esforço da lista e depende do CRM (#5)
+    já existir -- fica por último. Enquanto isso não sai do papel, dá pra
+    colocar um botão simples "Abrir WhatsApp" (link direto, sem custo) em
+    cada contato do CRM.
