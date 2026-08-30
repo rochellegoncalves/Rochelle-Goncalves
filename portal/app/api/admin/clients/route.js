@@ -3,9 +3,14 @@ import { requireOwner } from '../../../../lib/requireOwner';
 import { createAdminClient } from '../../../../lib/supabaseAdmin';
 
 const SELECT_FIELDS =
-  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, admin_nationality, admin_marital_status, admin_profession, monthly_value, contract_start_date, active, created_at, documents(count)';
+  'id, company_name, cpf_cnpj, address, phone, admin_name, admin_cpf, admin_rg, admin_email, admin_nationality, admin_marital_status, admin_profession, monthly_value, contract_start_date, active, created_at, documents(id, category, created_at)';
 
 function mapClient(c, email) {
+  const docs = c.documents || [];
+  const signedContract = docs
+    .filter((d) => d.category === 'Contrato assinado')
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
   return {
     id: c.id,
     companyName: c.company_name,
@@ -24,7 +29,8 @@ function mapClient(c, email) {
     contractStartDate: c.contract_start_date,
     active: c.active,
     createdAt: c.created_at,
-    documentCount: c.documents?.[0]?.count ?? 0,
+    documentCount: docs.length,
+    signedContractDocumentId: signedContract?.id || null,
   };
 }
 

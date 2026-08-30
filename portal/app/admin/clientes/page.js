@@ -369,6 +369,16 @@ export default function ClientesPage() {
                 >
                   {sendingSignature ? 'Enviando...' : 'Enviar p/ assinatura (Autentique)'}
                 </button>
+                {viewingClient.signedContractDocumentId && (
+                  <a
+                    style={styles.signedButton}
+                    href={`/api/admin/documents/download?id=${viewingClient.signedContractDocumentId}`}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Ver contrato assinado
+                  </a>
+                )}
                 <button style={styles.cancelButton} onClick={() => startEdit(viewingClient)}>
                   Editar
                 </button>
@@ -577,6 +587,18 @@ const styles = {
     flexWrap: 'wrap',
     gap: 12,
     marginBottom: 4,
+  },
+  signedButton: {
+    background: 'rgba(139,165,143,0.18)',
+    border: '1px solid rgba(139,165,143,0.5)',
+    color: '#3C4A38',
+    padding: '11px 20px',
+    borderRadius: 4,
+    fontWeight: 700,
+    fontSize: '0.85rem',
+    height: 42,
+    display: 'inline-flex',
+    alignItems: 'center',
   },
   signatureNote: {
     background: 'rgba(139,165,143,0.15)',
