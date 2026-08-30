@@ -558,7 +558,7 @@ const styles = {
   tableWrap: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, overflow: 'hidden' },
   tableHeadRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr 170px',
     padding: '10px 20px',
     fontSize: '0.68rem',
     textTransform: 'uppercase',
@@ -569,7 +569,7 @@ const styles = {
   },
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr auto',
+    gridTemplateColumns: '2fr 1fr 1fr 1fr 170px',
     padding: '11px 20px',
     borderTop: '1px solid rgba(15,45,36,0.06)',
     fontSize: '0.84rem',
