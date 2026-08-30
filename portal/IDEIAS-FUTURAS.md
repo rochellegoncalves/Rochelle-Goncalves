@@ -69,11 +69,12 @@ Ela mandou o modelo real do contrato de consultoria. Status:
    (`AUTENTIQUE_TOKEN` configurado no Vercel), com o administrador do
    cliente como signatário. O Autentique manda o e-mail de assinatura
    automaticamente.
-3. Guardar o contrato assinado (voltando do Autentique) como documento na
-   área do cliente -- ainda falta automatizar. Hoje dá pra baixar o
-   assinado no próprio Autentique e subir manualmente em Documentos; pra
-   automatizar, precisa configurar um webhook do Autentique avisando
-   quando o documento for assinado por todos.
+3. ~~Guardar o contrato assinado (voltando do Autentique) como documento na
+   área do cliente~~ -- **feito**. Webhook (`/api/webhooks/autentique`)
+   configurado no Autentique avisa quando algo muda num documento; o
+   sistema confere se já foi assinado por todos e, se sim, baixa o PDF
+   assinado e substitui o documento automaticamente (categoria vira
+   "Contrato assinado"). Testado e funcionando de ponta a ponta.
 
 ### 7. Botão "ver como o cliente vê" no cadastro do cliente
 Depois que a Área do Cliente tiver mais conteúdo de verdade (Plano de Ação,
