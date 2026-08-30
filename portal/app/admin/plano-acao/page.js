@@ -479,7 +479,8 @@ const styles = {
     background: '#fff',
     width: '100%',
     boxSizing: 'border-box',
-    resize: 'vertical',
+    resize: 'none',
+    overflow: 'hidden',
   },
   diagnosticoTextarea: {
     border: '1px solid rgba(15,45,36,0.12)',
@@ -491,7 +492,8 @@ const styles = {
     background: '#F7F5F0',
     width: '100%',
     boxSizing: 'border-box',
-    resize: 'vertical',
+    resize: 'none',
+    overflow: 'hidden',
   },
   statusSelect: {
     border: '1px solid rgba(15,45,36,0.15)',
