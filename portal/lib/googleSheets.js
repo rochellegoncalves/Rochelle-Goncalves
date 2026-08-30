@@ -40,3 +40,13 @@ export function getSheetsClient() {
 export function getDriveClient() {
   return google.drive({ version: 'v3', auth: getAuth() });
 }
+
+// Planilha "Consultoria Rochelle Gonçalves" que ela já usa pra
+// acompanhar o próprio negócio (financeiro, relacionamentos/CRM etc).
+// Pode ser sobrescrita por env var se ela trocar de planilha algum dia,
+// sem precisar mexer no código.
+const DEFAULT_TRACKING_SPREADSHEET_ID = '1lXT_xZDpuVfPZ1telp1UJxyrbkOwN72H7WWAieMggDo';
+
+export function getTrackingSpreadsheetId() {
+  return extractSpreadsheetId(process.env.ROCHELLE_TRACKING_SHEET_URL) || DEFAULT_TRACKING_SPREADSHEET_ID;
+}

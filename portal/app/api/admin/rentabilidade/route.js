@@ -1,17 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireOwner } from '../../../../lib/requireOwner';
-import { getSheetsClient, extractSpreadsheetId } from '../../../../lib/googleSheets';
+import { getSheetsClient, getTrackingSpreadsheetId } from '../../../../lib/googleSheets';
 
 const SHEET_TAB = '💰 Financeiro';
-
-// ID da planilha "Consultoria Rochelle Gonçalves" que ela já usa hoje pra
-// controle financeiro. Pode ser sobrescrito por env var se ela trocar de
-// planilha algum dia, sem precisar mexer no código.
-const DEFAULT_SPREADSHEET_ID = '1lXT_xZDpuVfPZ1telp1UJxyrbkOwN72H7WWAieMggDo';
-
-function getSpreadsheetId() {
-  return extractSpreadsheetId(process.env.FINANCEIRO_SHEET_URL) || DEFAULT_SPREADSHEET_ID;
-}
 
 function parseBRL(str) {
   if (!str) return 0;
@@ -35,7 +26,7 @@ export async function GET() {
   const { error } = await requireOwner();
   if (error) return error;
 
-  const spreadsheetId = getSpreadsheetId();
+  const spreadsheetId = getTrackingSpreadsheetId();
   const sheets = getSheetsClient();
 
   let rows;

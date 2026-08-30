@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/admin/plano-acao', label: 'Plano de Ação', ready: true },
   { href: '/admin/rentabilidade', label: 'Rentabilidade', ready: true },
   { href: '/admin/timesheet', label: 'Timesheet', ready: true },
+  { href: '/admin/crm', label: 'CRM', ready: true },
   { href: '#', label: 'Visão Geral (em breve)', ready: false },
 ];
 
