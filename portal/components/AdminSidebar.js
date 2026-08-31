@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '../lib/supabaseClient';
 
 const NAV_ITEMS = [
+  { href: '/admin/visao-geral', label: 'Visão Geral', ready: true },
   { href: '/admin/tarefas', label: 'Minhas Tarefas', ready: true },
   { href: '/admin/clientes', label: 'Clientes', ready: true },
   { href: '/admin/documentos', label: 'Documentos', ready: true },
@@ -13,7 +14,6 @@ const NAV_ITEMS = [
   { href: '/admin/timesheet', label: 'Timesheet', ready: true },
   { href: '/admin/crm', label: 'CRM', ready: true },
   { href: '/admin/processos', label: 'Processos', ready: true },
-  { href: '#', label: 'Visão Geral (em breve)', ready: false },
 ];
 
 export default function AdminSidebar({ active }) {
