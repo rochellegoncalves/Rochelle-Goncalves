@@ -224,7 +224,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== Sections ===== */
-.section { padding: 100px 0; }
+.section { padding: 76px 0; }
 .section-dark {
   background: var(--verde-profundo);
   color: var(--text-light);
@@ -310,7 +310,6 @@ a { color: inherit; text-decoration: none; }
   padding-top: 48px;
   border-top: 1px solid rgba(15,45,36,0.1);
 }
-.detail-block > p { max-width: 720px; }
 .section-dark .detail-block { border-top-color: rgba(200,168,105,0.2); }
 .detail-number {
   font-family: var(--font-serif);
@@ -418,8 +417,11 @@ a { color: inherit; text-decoration: none; }
   border-top: 3px solid var(--dourado);
 }
 
-/* Result */
-.result-list { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; max-width: 760px; }
+/* Result -- o parágrafo de abertura usa a largura toda da seção aqui,
+   em vez do limite padrão de .section-lead, pra acompanhar a lista e
+   o fechamento abaixo dele. */
+#resultado .section-lead { max-width: none; }
+.result-list { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
 .result-list li { color: rgba(247,245,240,0.8); padding-left: 22px; position: relative; }
 .result-list li::before {
   content: '';
@@ -592,7 +594,7 @@ a { color: inherit; text-decoration: none; }
   }
   .pillars, .system-grid, .audience-grid { grid-template-columns: 1fr; }
   .hero { padding: 100px 0 80px; }
-  .section { padding: 70px 0; }
+  .section { padding: 52px 0; }
   .contact-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .flow-row { flex-direction: column; }
 }
