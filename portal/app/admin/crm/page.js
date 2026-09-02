@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '../../../lib/supabaseClient';
 import AdminSidebar from '../../../components/AdminSidebar';
 
@@ -32,7 +32,16 @@ function formatMoney(value) {
 }
 
 export default function CrmPage() {
+  return (
+    <Suspense fallback={<div style={styles.loading}>Carregando...</div>}>
+      <CrmPageInner />
+    </Suspense>
+  );
+}
+
+function CrmPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState([]);
   const [error, setError] = useState('');
@@ -51,6 +60,13 @@ export default function CrmPage() {
   const [newContact, setNewContact] = useState(EMPTY_NEW_CONTACT);
   const [addingContact, setAddingContact] = useState(false);
 
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleContacts, setGoogleContacts] = useState([]);
+  const [showGoogleImport, setShowGoogleImport] = useState(false);
+  const [selectedGoogleContacts, setSelectedGoogleContacts] = useState(new Set());
+  const [importingGoogle, setImportingGoogle] = useState(false);
+  const [googleNotice, setGoogleNotice] = useState('');
+
   useEffect(() => {
     async function init() {
       const supabase = createClient();
@@ -61,7 +77,12 @@ export default function CrmPage() {
         router.replace('/login');
         return;
       }
-      await loadContacts();
+      if (searchParams.get('google_connected')) {
+        setGoogleNotice('Conectado ao Google com sucesso.');
+      } else if (searchParams.get('google_error')) {
+        setGoogleNotice(`Erro ao conectar com Google: ${searchParams.get('google_error')}`);
+      }
+      await Promise.all([loadContacts(), loadGoogleContacts()]);
       setLoading(false);
     }
     init();
@@ -77,6 +98,40 @@ export default function CrmPage() {
     }
     const data = await res.json();
     setContacts(data.contacts || []);
+  }
+
+  async function loadGoogleContacts() {
+    const res = await fetch('/api/admin/crm/google-contacts');
+    if (!res.ok) return;
+    const data = await res.json();
+    setGoogleConnected(!!data.connected);
+    setGoogleContacts(data.contacts || []);
+  }
+
+  function toggleGoogleContact(resourceName) {
+    setSelectedGoogleContacts((s) => {
+      const next = new Set(s);
+      if (next.has(resourceName)) next.delete(resourceName);
+      else next.add(resourceName);
+      return next;
+    });
+  }
+
+  async function handleImportGoogleContacts() {
+    const toImport = googleContacts.filter((c) => selectedGoogleContacts.has(c.resourceName));
+    if (toImport.length === 0) return;
+    setImportingGoogle(true);
+    setError('');
+    for (const c of toImport) {
+      await fetch('/api/admin/crm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: c.nome, origem: 'Contatos do Google', status: 'Lead Frio' }),
+      });
+    }
+    setImportingGoogle(false);
+    setSelectedGoogleContacts(new Set());
+    await Promise.all([loadContacts(), loadGoogleContacts()]);
   }
 
   function updateLocal(rowNumber, field, value) {
@@ -229,6 +284,7 @@ export default function CrmPage() {
         </p>
 
         {error && <p style={styles.error}>{error}</p>}
+        {googleNotice && <p style={styles.notice}>{googleNotice}</p>}
 
         <div style={styles.funnelRow}>
           {funnelStats.map((stage) => (
@@ -244,7 +300,53 @@ export default function CrmPage() {
           <button style={styles.button} onClick={() => setShowAddForm((v) => !v)}>
             {showAddForm ? 'Cancelar' : '+ Novo contato'}
           </button>
+          {googleConnected ? (
+            <button style={styles.cancelButton} onClick={() => setShowGoogleImport((v) => !v)}>
+              {showGoogleImport ? 'Fechar' : 'Importar contatos do Google'}
+            </button>
+          ) : (
+            <a style={styles.cancelButton} href="/api/admin/crm/google-contacts/connect">
+              Conectar com Google
+            </a>
+          )}
         </div>
+
+        {showGoogleImport && (
+          <div style={styles.panel}>
+            <h3 style={styles.panelTitle}>Importar contatos do Google</h3>
+            <p style={styles.sub}>
+              {googleContacts.filter((c) => !c.alreadyInCrm).length} contato(s) ainda não estão no CRM.
+              Selecione quem quer trazer.
+            </p>
+            <div style={styles.googleContactsList}>
+              {googleContacts
+                .filter((c) => !c.alreadyInCrm)
+                .map((c) => (
+                  <label key={c.resourceName} style={styles.googleContactRow}>
+                    <input
+                      type="checkbox"
+                      checked={selectedGoogleContacts.has(c.resourceName)}
+                      onChange={() => toggleGoogleContact(c.resourceName)}
+                    />
+                    <span>{c.nome}</span>
+                    {c.email && <span style={styles.googleContactMeta}>{c.email}</span>}
+                  </label>
+                ))}
+              {googleContacts.filter((c) => !c.alreadyInCrm).length === 0 && (
+                <p style={styles.sub}>Todos os seus contatos do Google já estão no CRM.</p>
+              )}
+            </div>
+            <div style={styles.formActions}>
+              <button
+                style={styles.button}
+                onClick={handleImportGoogleContacts}
+                disabled={importingGoogle || selectedGoogleContacts.size === 0}
+              >
+                {importingGoogle ? 'Importando...' : `Adicionar ${selectedGoogleContacts.size} selecionado(s)`}
+              </button>
+            </div>
+          </div>
+        )}
 
         {showAddForm && (
           <div style={styles.panel}>
@@ -477,7 +579,33 @@ const styles = {
   },
   funnelCount: { fontSize: '1.5rem', fontWeight: 700, color: '#0F2D24', fontVariantNumeric: 'tabular-nums' },
   funnelTotal: { fontSize: '0.78rem', color: '#3C4A38', fontVariantNumeric: 'tabular-nums' },
-  controls: { display: 'flex', marginBottom: 16 },
+  controls: { display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' },
+  notice: { color: '#4c6350', marginBottom: 18, fontSize: '0.9rem' },
+  cancelButton: {
+    background: 'none',
+    border: '1px solid rgba(15,45,36,0.2)',
+    color: '#0F2D24',
+    padding: '9px 18px',
+    borderRadius: 4,
+    fontWeight: 600,
+    fontSize: '0.8rem',
+    height: 38,
+    display: 'inline-flex',
+    alignItems: 'center',
+    textDecoration: 'none',
+    boxSizing: 'border-box',
+    cursor: 'pointer',
+  },
+  googleContactsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+    maxHeight: 320,
+    overflowY: 'auto',
+    marginBottom: 14,
+  },
+  googleContactRow: { display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', color: '#0F2D24' },
+  googleContactMeta: { fontSize: '0.75rem', color: '#3C4A38', opacity: 0.7 },
   panel: { background: '#fff', border: '1px solid rgba(15,45,36,0.08)', borderRadius: 6, padding: '20px 24px', marginBottom: 24 },
   panelTitle: { fontSize: '0.95rem', marginBottom: 14, fontFamily: 'Playfair Display, serif', color: '#0F2D24' },
   form: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14, alignItems: 'end' },

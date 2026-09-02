@@ -113,6 +113,19 @@ create table if not exists public.methodology_checklist (
 
 alter table public.methodology_checklist enable row level security;
 
+-- Tokens OAuth de integrações externas (hoje só Contatos do Google no
+-- CRM). Uma linha por provider -- só ela mesma autoriza, então não
+-- precisa de uma linha por usuário.
+create table if not exists public.oauth_tokens (
+  provider text primary key,
+  access_token text,
+  refresh_token text,
+  expiry timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.oauth_tokens enable row level security;
+
 -- ------------------------------------------------------------------
 -- Como adicionar um cliente novo (por enquanto, manual, até termos o
 -- painel de administração pronto):
