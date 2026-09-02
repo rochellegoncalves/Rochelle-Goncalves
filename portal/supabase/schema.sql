@@ -84,6 +84,35 @@ alter table public.time_entries enable row level security;
 -- Sem policy de leitura pro cliente -- só acessível via chave de
 -- serviço nas rotas /api/admin/timesheet.
 
+-- Indicadores da própria consultoria: um check-in por semana, cobrindo
+-- as áreas da rotina dela (Estratégica/Estudo, Posicionamento,
+-- Produção) que não têm outra fonte de dados -- Relacionamentos já é
+-- coberto pelo CRM (aba Relacionamentos da planilha).
+create table if not exists public.weekly_checkins (
+  id uuid primary key default gen_random_uuid(),
+  week_start date not null unique,
+  objetivo_semana text,
+  objetivo_status text,
+  estudo_count integer,
+  posicionamento_count integer,
+  producao_count integer,
+  revisao_feita boolean not null default false,
+  notas text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.weekly_checkins enable row level security;
+
+-- Autoauditoria: os itens do checklist "Aplicação Consultoria" (o que
+-- ela normalmente monta pros clientes), aplicados ao próprio negócio.
+create table if not exists public.methodology_checklist (
+  item_key text primary key,
+  done boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.methodology_checklist enable row level security;
+
 -- ------------------------------------------------------------------
 -- Como adicionar um cliente novo (por enquanto, manual, até termos o
 -- painel de administração pronto):

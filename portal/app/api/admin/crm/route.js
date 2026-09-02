@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireOwner } from '../../../../lib/requireOwner';
 import { getSheetsClient, getTrackingSpreadsheetId } from '../../../../lib/googleSheets';
+import { getCrmContacts } from '../../../../lib/crmData';
 
 const SHEET_TAB = '🌱 Relacionamentos';
 
@@ -17,11 +18,6 @@ const HEADER_NAMES = {
   dataContato: 'Data Contato',
   valorProposta: 'Valor da Proposta',
 };
-
-function getCell(row, index) {
-  if (index == null || index === -1) return '';
-  return row[index] || '';
-}
 
 function columnIndexToLetter(index) {
   let letter = '';
@@ -50,27 +46,10 @@ function findHeader(rows) {
   return null;
 }
 
-function parseDateBRtoISO(str) {
-  if (!str) return null;
-  const parts = str.trim().split('/');
-  if (parts.length !== 3) return null;
-  const [d, m, y] = parts;
-  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-}
-
 function formatDateISOtoBR(iso) {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
-}
-
-function parseBRL(str) {
-  if (!str) return null;
-  const cleaned = (str || '').replace(/[^\d,.-]/g, '').trim();
-  if (!cleaned) return null;
-  const normalized = cleaned.replace(/\./g, '').replace(',', '.');
-  const n = parseFloat(normalized);
-  return Number.isNaN(n) ? null : n;
 }
 
 async function fetchRows(sheets, spreadsheetId) {
@@ -85,41 +64,11 @@ export async function GET() {
   const { error } = await requireOwner();
   if (error) return error;
 
-  const spreadsheetId = getTrackingSpreadsheetId();
-  const sheets = getSheetsClient();
-
-  let rows;
+  let contacts;
   try {
-    rows = await fetchRows(sheets, spreadsheetId);
+    contacts = await getCrmContacts();
   } catch (e) {
     return NextResponse.json({ error: 'google_sheets_error', message: e.message }, { status: 502 });
-  }
-
-  const header = findHeader(rows);
-  if (!header) {
-    return NextResponse.json(
-      { error: 'header_not_found', note: `Não encontrei a linha de cabeçalho com "Nome"/"Status" na aba "${SHEET_TAB}".` },
-      { status: 422 }
-    );
-  }
-
-  const { columns } = header;
-  const contacts = [];
-  for (let i = header.rowIndex + 1; i < rows.length; i++) {
-    const r = rows[i];
-    const nome = getCell(r, columns.nome).trim();
-    if (!nome) continue;
-    contacts.push({
-      rowNumber: i + 1,
-      nome,
-      origem: getCell(r, columns.origem),
-      segmento: getCell(r, columns.segmento),
-      objetivo: getCell(r, columns.objetivo),
-      potencial: getCell(r, columns.potencial),
-      status: getCell(r, columns.status),
-      dataContato: parseDateBRtoISO(getCell(r, columns.dataContato)),
-      valorProposta: parseBRL(getCell(r, columns.valorProposta)),
-    });
   }
 
   return NextResponse.json({ contacts });
