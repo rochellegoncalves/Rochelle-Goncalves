@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireOwner } from '../../../../lib/requireOwner';
 import { getSheetsClient, getTrackingSpreadsheetId } from '../../../../lib/googleSheets';
 import { getCrmContacts } from '../../../../lib/crmData';
+import { createAdminClient } from '../../../../lib/supabaseAdmin';
 
 const SHEET_TAB = '🌱 Relacionamentos';
 
@@ -164,6 +165,14 @@ export async function PATCH(request) {
 
   const cellValue = field === 'dataContato' ? formatDateISOtoBR(value) : value ?? '';
 
+  // Guardamos o valor anterior de status e o nome antes de escrever,
+  // pra saber se essa mudança é a que faz o contato "virar cliente" e
+  // registrar isso como um evento (a coluna sozinha não guarda quando
+  // isso aconteceu, só o valor atual).
+  const previousRow = rows[rowNumber - 1] || [];
+  const previousStatus = header.columns.status !== -1 ? previousRow[header.columns.status] || '' : '';
+  const nome = header.columns.nome !== -1 ? previousRow[header.columns.nome] || '' : '';
+
   try {
     await sheets.spreadsheets.values.update({
       spreadsheetId,
@@ -173,6 +182,15 @@ export async function PATCH(request) {
     });
   } catch (e) {
     return NextResponse.json({ error: 'google_sheets_error', message: e.message }, { status: 502 });
+  }
+
+  if (field === 'status' && value === 'Cliente' && previousStatus !== 'Cliente' && nome) {
+    const admin = createAdminClient();
+    await admin.from('crm_activities').insert({
+      contact_nome: nome,
+      tipo: 'Tornou-se Cliente',
+      data: new Date().toISOString().slice(0, 10),
+    });
   }
 
   return NextResponse.json({ ok: true });

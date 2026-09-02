@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { href: '/admin/timesheet', label: 'Timesheet', ready: true },
   { href: '/admin/crm', label: 'CRM', ready: true },
   { href: '/admin/processos', label: 'Processos', ready: true },
-  { href: '/admin/indicadores', label: 'Indicadores', ready: true },
 ];
 
 export default function AdminSidebar({ active }) {

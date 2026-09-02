@@ -113,6 +113,32 @@ create table if not exists public.methodology_checklist (
 
 alter table public.methodology_checklist enable row level security;
 
+-- Conteúdo escrito de cada item da autoauditoria (o Canvas dela de
+-- verdade, o SWOT dela de verdade etc.), não só um checkbox.
+create table if not exists public.methodology_pages (
+  item_key text primary key,
+  content text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.methodology_pages enable row level security;
+
+-- Registro de atividades do CRM (contato feito, reunião realizada,
+-- virou cliente) -- ao contrário da coluna "Data Contato" da planilha
+-- (que é sobrescrita a cada atualização), aqui cada evento fica
+-- guardado, então dá pra contar quantos contatos/reuniões por dia ou
+-- semana e calcular quanto tempo um contato levou até virar cliente.
+create table if not exists public.crm_activities (
+  id uuid primary key default gen_random_uuid(),
+  contact_nome text not null,
+  tipo text not null,
+  data date not null,
+  obs text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.crm_activities enable row level security;
+
 -- Tokens OAuth de integrações externas (hoje só Contatos do Google no
 -- CRM). Uma linha por provider -- só ela mesma autoriza, então não
 -- precisa de uma linha por usuário.
