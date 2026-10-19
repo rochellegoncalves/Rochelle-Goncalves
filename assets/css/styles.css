@@ -95,6 +95,12 @@ a { color: inherit; text-decoration: none; }
   border-color: rgba(247,245,240,0.4);
 }
 .btn-ghost:hover { border-color: var(--dourado); color: var(--dourado); }
+.btn-ghost-dark {
+  background: transparent;
+  color: var(--verde-profundo);
+  border-color: rgba(15,45,36,0.3);
+}
+.btn-ghost-dark:hover { border-color: var(--dourado); color: var(--verde-oliva); }
 .btn-lg { padding: 16px 40px; font-size: 1rem; margin-top: 36px; }
 .btn-nav { padding: 10px 22px; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0; }
 
@@ -396,7 +402,7 @@ a { color: inherit; text-decoration: none; }
   align-items: start;
 }
 .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
-.about-text .btn { margin-top: 28px; }
+.about-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 .tags span {
   background: var(--champagne);
   color: var(--verde-profundo);
